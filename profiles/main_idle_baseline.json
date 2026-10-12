@@ -1,0 +1,1366 @@
+{
+ "name": "Q50 engine idle, parked (real car, idle.pcapng 30-150 s)",
+ "format": "q50tb-background-1",
+ "source": "idle.pcapng",
+ "bus": "main",
+ "messages": [
+  {
+   "id": "0x002",
+   "name": "Steering Angle",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "7F F2 00 07 02 8D 45 04",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 4,
+     "lsb": 0,
+     "width": 4,
+     "step": 1
+    }
+   ],
+   "checksums": [
+    {
+     "kind": "xor_nibbles",
+     "byte": 7,
+     "over": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "add": 0
+    }
+   ]
+  },
+  {
+   "id": "0x02A",
+   "name": "Unknown 0x02A",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00 00 08",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 5,
+     "lsb": 2,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x160",
+   "name": "Accelerator Pedal",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "33 D3 22 00 08 FF E8 00",
+   "enabled": true
+  },
+  {
+   "id": "0x174",
+   "name": "Unknown 0x174",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "FF E7 1C AA 0D 10 00 00",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 4,
+     "lsb": 0,
+     "width": 4,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x176",
+   "name": "Unknown 0x176",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "00 00 02 B1 00 00 0D",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 6,
+     "lsb": 0,
+     "width": 4,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x177",
+   "name": "Unknown 0x177",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "FE 10 00 00 00 F8 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x180",
+   "name": "Engine RPM",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "15 C7 32 23 3D 00 30 10",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 6,
+     "lsb": 0,
+     "width": 4,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x182",
+   "name": "Engine 2",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "FF 00 00 00 00 10 00 CF",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 5,
+     "lsb": 0,
+     "width": 4,
+     "step": 1
+    }
+   ],
+   "sequence": [
+    "ff000000001000cb",
+    "ff000000001100cb"
+   ],
+   "notes": "2-frame repeating pattern (multiplexed payload)"
+  },
+  {
+   "id": "0x1C3",
+   "name": "Unknown 0x1C3",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "00 00 00 00 64 01 FF 28",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 5,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ],
+   "checksums": [
+    {
+     "kind": "sum8",
+     "byte": 7,
+     "over": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "add": 196
+    }
+   ]
+  },
+  {
+   "id": "0x1F9",
+   "name": "Unknown 0x1F9",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "28 00 15 C7 00 00 00 E4",
+   "enabled": true
+  },
+  {
+   "id": "0x215",
+   "name": "Unknown 0x215",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "FF FC FF 00 FF FF",
+   "enabled": true
+  },
+  {
+   "id": "0x216",
+   "name": "BCM lights",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "42 6C 20",
+   "enabled": true
+  },
+  {
+   "id": "0x239",
+   "name": "Pedal / cruise switches",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "00 FF 81 20 54 00 3F F0",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 4,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x245",
+   "name": "Unknown 0x245",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "FF E0 00 18 A8 00 FF E0",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 4,
+     "lsb": 0,
+     "width": 8,
+     "step": 1
+    },
+    {
+     "byte": 7,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x284",
+   "name": "Front wheel speeds",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "00 00 00 00 00 00 A8 2E",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 6,
+     "lsb": 0,
+     "width": 8,
+     "step": 1
+    }
+   ],
+   "checksums": [
+    {
+     "kind": "sum8",
+     "byte": 7,
+     "over": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "add": 134
+    }
+   ]
+  },
+  {
+   "id": "0x285",
+   "name": "Rear wheel speeds",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "00 00 00 00 00 00 A8 2F",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 6,
+     "lsb": 0,
+     "width": 8,
+     "step": 1
+    }
+   ],
+   "checksums": [
+    {
+     "kind": "sum8",
+     "byte": 7,
+     "over": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "add": 135
+    }
+   ]
+  },
+  {
+   "id": "0x286",
+   "name": "Unknown 0x286",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "00 00",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 1,
+     "lsb": 6,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x292",
+   "name": "Forces",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "81 F7 F8 7F FF FE 00 F0",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 7,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x2AA",
+   "name": "Unknown 0x2AA",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "00 03 83 E8 00 00 08 22",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 6,
+     "lsb": 0,
+     "width": 4,
+     "step": 1
+    }
+   ],
+   "checksums": [
+    {
+     "kind": "sum8",
+     "byte": 7,
+     "over": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "add": 172
+    }
+   ]
+  },
+  {
+   "id": "0x2AB",
+   "name": "Unresolved 0x2AB",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "00 00 01 C2 00 00 81 DD",
+   "enabled": true
+  },
+  {
+   "id": "0x2B0",
+   "name": "Unknown 0x2B0",
+   "bus": "main",
+   "period_ms": 10.0,
+   "payload": "00 0F FF 8C 1B 00 2E 00",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 6,
+     "lsb": 4,
+     "width": 4,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x2B1",
+   "name": "ADAS",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "01 00 40 00 00 10",
+   "enabled": true
+  },
+  {
+   "id": "0x300",
+   "name": "Unresolved 0x300",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "00",
+   "enabled": true
+  },
+  {
+   "id": "0x351",
+   "name": "Intelligent Key",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00 04 00 02 06",
+   "enabled": true
+  },
+  {
+   "id": "0x354",
+   "name": "Chassis Control (ABS)",
+   "bus": "main",
+   "period_ms": 40.0,
+   "payload": "00 00 00 00 00 00 04 00",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 5,
+     "lsb": 3,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x358",
+   "name": "Body / lamps",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "02 02 00 00 01 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x35D",
+   "name": "Brake signal",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "80 03 00 00 00 00 00 55",
+   "enabled": true
+  },
+  {
+   "id": "0x385",
+   "name": "TPMS",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "08 00 7C 7A 7C 7B 00 55",
+   "enabled": true
+  },
+  {
+   "id": "0x3AF",
+   "name": "Hazard switch",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "40",
+   "enabled": true
+  },
+  {
+   "id": "0x3DB",
+   "name": "Unknown 0x3DB",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 27 B5 9E 7D 4B 1D 1F",
+   "enabled": true,
+   "sequence": [
+    "004b3bce96e784b3",
+    "00ccee980744af11",
+    "001a3c832aa86907",
+    "00ca8ac18dd8d16a",
+    "000574791aac01ba",
+    "00dde98aebfe0285",
+    "007ebd3735f0df2e",
+    "00bed62697ad7a93",
+    "00e458c6102628bf",
+    "00ee2da0d1c1d9f5",
+    "00754b36e817efaf",
+    "000a626b40f631b4",
+    "000840e4a8950962",
+    "00ac46d3ce40cead",
+    "002721d83cd8f782",
+    "000d0d64035ca962",
+    "002b474071b97488",
+    "0072f3ab71396b61",
+    "00db39a731daa3c2",
+    "008eb18b1727f10f",
+    "0010373b4484565e",
+    "0010a74e828c4cee",
+    "00fdf2867bf90232",
+    "00d531cf3fe635d9",
+    "0011af5057b184ae",
+    "00993b5ee654a2a9",
+    "00f168c199027e24",
+    "004ad809bcd1af67",
+    "00714a1cbebd4276",
+    "0042249663195829",
+    "0088b6b49e5136c9",
+    "00975d15eff1fe8f",
+    "0095462dade1cb57",
+    "009d44f97d1e1415",
+    "001e3d3e1ce48c92",
+    "0028b34c793b6306",
+    "0090b3fc08622579",
+    "00395cde7cc4140b",
+    "00c6e062655babcf",
+    "00526cc9ed063060",
+    "00141a80c4793fd2",
+    "001049f4d226ba0f",
+    "005a63da5d3143f2",
+    "008c80e0585b3162",
+    "003595bb7d4470b4",
+    "0042481891376224",
+    "00a535ea59e0d66a",
+    "004f0603cbf4d632",
+    "00177f3085859e0d",
+    "005db6657ca01c3a",
+    "0080dbfddb119446",
+    "0064bb59dba66e85",
+    "000bc7076784b546",
+    "00561fdafa0fe6fe",
+    "000784f7debf0fc7",
+    "000f7ae8f80b34ad",
+    "009b17bc2477b0a9",
+    "0037dd78c3f42ddc",
+    "00f2d50c5a835920",
+    "00b12c16d1cada87",
+    "00eef4602c525994",
+    "00b741c6bd74fb13",
+    "000239d51973fc7c",
+    "00164a280f49e071",
+    "00c8a0e9af72e054",
+    "00ff8496e7988f3d",
+    "00f67397a3cbe385",
+    "00efb862755723b4",
+    "00caad98c04ed368",
+    "002dd10baf7ae280",
+    "007beb927f8ebeda",
+    "000626d32bb8da57",
+    "006eda2e5927db74",
+    "00fb9122e56904e4",
+    "007d9a328310f8ca",
+    "00899822662305c7",
+    "0084d3f826a9a4ad",
+    "00081cce8a505bc4",
+    "007f1ed718775857",
+    "00f56534b1d8c264",
+    "00ea50144ac057ef",
+    "00594f1c357c2fcb",
+    "0061886cbce24312",
+    "000978d62699ae94",
+    "00f9d668dd5cddeb",
+    "0021e852bf1a8b83",
+    "00d53dbc00beff3c",
+    "007054175b8550ea",
+    "0060e2f653f5ffd6",
+    "0002f4535ed7a110",
+    "00ca1aec1aa419dd",
+    "006c40b5837fcbe8",
+    "0043d05a571fff26",
+    "0047482b2646e2bb",
+    "00be637a0dbab125",
+    "00c1781573d317ff",
+    "00f08327abb68abb",
+    "00238d52f0825bae",
+    "006012490048d199",
+    "00e532a107ccd3ee",
+    "007e66480e6306d4",
+    "0067673f57b58d2c",
+    "001b025717c7205a",
+    "00588e7bdd7083c9",
+    "00b5b445faa37d94",
+    "006443009d35ffb7",
+    "008d2e8ad302f8a9",
+    "006b09ba54ab9eb7",
+    "0057612340448ebe",
+    "00f9c486dee4d252",
+    "0042ff531f7bd895",
+    "00786de599716530",
+    "008a60f7827f4978",
+    "008a7bb4ca20620b",
+    "00a2930b0f4d74f8",
+    "00f264e5f6b653a4",
+    "007f293d19aa6714",
+    "00c5551601e8db92",
+    "0060132453fe7cb2",
+    "0043d033e3e9969c",
+    "004e6f70d716516c",
+    "00a56607d6fae032",
+    "0049ac7f77873173",
+    "00f7c5c567c97bf3",
+    "0084e512fa9f1cc7",
+    "0020aa2fba29ffac",
+    "002aef24b5d39ada",
+    "009de5bb18d032e1",
+    "00edff2fbc588b97",
+    "001c7875f8f7e10c",
+    "006983fd185d84df",
+    "002f62f2d80167d4",
+    "004147d9b29335be",
+    "00934152d4100135",
+    "0036f3177dc5c074",
+    "00ab6fc7011ae528",
+    "003f0e43a7992019",
+    "00114b5a15acbb46",
+    "00b00b44472c12d1",
+    "00c5ed7a64819adf",
+    "0020acd9396c8ae8",
+    "000f334d277602af",
+    "003d0893ff7e8e0a",
+    "00062f49568a2964",
+    "003d1e835513dded",
+    "00fcbbc966a125b1",
+    "00c1ca1ff3055b84",
+    "009107ea08e7de1f",
+    "00f56b016f2debfd",
+    "00d76b6215186af8",
+    "0005b1313c7d1ac6",
+    "00d6ea173a61a566",
+    "0016cfe2921e4392",
+    "00875f95abcf28ff",
+    "008ba7af81ed3921",
+    "007c6939e6662109",
+    "0096a537357384a3",
+    "00b217d858a949fb",
+    "003ea7544e318f96",
+    "0017d3c3300fc79c",
+    "0091f2976c337157",
+    "00cb3ef0b57a20cf",
+    "008a925635eb92d7",
+    "00ae97dac0746e83",
+    "00b2b4869331842c",
+    "00e475a334393ac2",
+    "00b5f2ac10fa3bd7",
+    "00e74b920d952949",
+    "009212f2837f83d2",
+    "00caf9b802ec6af3",
+    "0072fcf38339751f",
+    "00d5d341f5d81a56",
+    "005209582371f850",
+    "0041c4c311651af9",
+    "00fbf1d345566d96",
+    "008d9077e469914c",
+    "00f9afe39e0c75f4",
+    "0067bf0390042b13",
+    "00a8d5019c77bf36",
+    "00d8548e1773ec16",
+    "00ed7f402676241f",
+    "002ba3429cf6ae75",
+    "00ac04dca5cc4b94",
+    "0033492644b4524e",
+    "00e32afa46144397",
+    "0074ead53246cb6f",
+    "00734824c5447412",
+    "00fece04c1983cff",
+    "00c2bb282f59157d",
+    "00c9c6a3698e2479",
+    "00df357dc7609d01",
+    "00142976a6d01973",
+    "00b9d8424bb46ff0",
+    "0036c99180cf2ceb",
+    "008fd31c3cb9d386",
+    "00ea00d3416b4e21",
+    "00d836011d4714a0",
+    "00137d98d3d3f577",
+    "001552c1cbd9e970",
+    "0026d8f790ac98e9",
+    "006dc19c8eed9374",
+    "0098f5c8c9a21c02",
+    "00d88539eef1c756",
+    "00ac4d0f78efee58",
+    "00417d8e47724daa",
+    "0069476f8337209a",
+    "00d9825a29807dac",
+    "002cfe815ba5a170",
+    "005c2e9869f3758f",
+    "00403a3ef167d2ca",
+    "00d779ca36249ae6",
+    "00044b2b114be052",
+    "00e29c139b9dccab",
+    "0064d225234bc936",
+    "00c99282a657cc5b",
+    "001ab23c2204976b",
+    "00aa42bc24ffc229",
+    "004fa8bbb34237d6",
+    "008f74337f0877cb",
+    "00a080928c0a74ab",
+    "004a94dacc66b9e6",
+    "003bac854480104b",
+    "005bdd4771dfa6a5",
+    "00acee3b66a4d2d8",
+    "00fe6983178162a8",
+    "008588132a5e28c9",
+    "0056704f527dc567",
+    "008cdbfe1e6e1f15",
+    "000bb1289e7ce866",
+    "00c083b7bd4b8954",
+    "00fade5a3cab2e18",
+    "00d5a378af117985",
+    "00646ee897ca5d52",
+    "00c59de437bc2df7",
+    "00ead849c7dd2a7c",
+    "005719176462e531",
+    "00d9d5933ff75ef5",
+    "001d7e6a146a4c48",
+    "0084fc3c2808f4ef",
+    "006ad7c720caa43b",
+    "00b92b12f3213d5e",
+    "0088b37da02d74ad",
+    "00f8bd79983d7a04",
+    "00b09eaffc8825df",
+    "0067ead71ce8bf7c",
+    "00c724f9e5d98e9c",
+    "00be81bcc4b62c9f",
+    "000e647ac1fae7b2",
+    "009509fa98756977",
+    "005f2ac3ea3476b9",
+    "00a42880817570a4",
+    "00e1b3d74bd2753a",
+    "00fe94dda3f0148c",
+    "002a47724347c535",
+    "0015c810ecd9d84b",
+    "00ac5bc35ca47712"
+   ],
+   "notes": "bytes [1, 2, 3, 4, 5, 6, 7] vary like a rolling code; replaying 256 captured frames"
+  },
+  {
+   "id": "0x3DC",
+   "name": "Unknown 0x3DC",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 24 3C F6 DE C6 80 C9",
+   "enabled": true,
+   "sequence": [
+    "006b73b9aeb6f0b9",
+    "00cad218b8a0e6af",
+    "00a7bf75ced690d9",
+    "00150dc7c0d89ed7",
+    "00958d47e6feb8f1",
+    "00aab278cbd395dc",
+    "00d1c903d6ce88c1",
+    "007f67add9c187ce",
+    "00647cb69880c68f",
+    "00938b41b2aaeca5",
+    "00a4bc76dec680c9",
+    "002038f2f9e1a7ee",
+    "002139f39b83c58c",
+    "00736ba1849cda93",
+    "00eaf238a3bbfdb4",
+    "00756da7dec680c9",
+    "00766ea4849cda93",
+    "00fee62cbca4e2ab",
+    "00a0b872bca4e2ab",
+    "00c8d01a9f87c188",
+    "00273ff5a6bef8b1",
+    "00e8f03afbe3a5ec",
+    "00b7af65968ec881",
+    "00c3db11839bdd94",
+    "00829a50b9a1e7ae",
+    "00e7ff359b83c58c",
+    "0048509ad4cc8ac3",
+    "00243cf6f7efa9e0",
+    "008d955f958dcb82",
+    "00d1c903c8d096df",
+    "00a9b17bf4ecaae3",
+    "006971bb9e86c089",
+    "002830fab3abeda4",
+    "000119d3c1d99fd6",
+    "00928a40c9d197de",
+    "0099814b9981c78e",
+    "00130bc1b8a0e6af",
+    "00f9e12badb5f3ba",
+    "001109c3dcc482cb",
+    "00544c86ffe7a1e8",
+    "007860aadcc482cb",
+    "00031bd1c1d99fd6",
+    "0088905ac3db9dd4",
+    "00233bf19981c78e",
+    "0049519be9f1b7fe",
+    "007e66acc9d197de",
+    "00edf53fc0d89ed7",
+    "00839b51d0c88ec7",
+    "00e5fd37dcc482cb",
+    "006b73b9a7bff9b0",
+    "00d1c903e2fabcf5",
+    "00ccd41ecdd593da",
+    "00d6ce04dcc482cb",
+    "009d854fdfc781c8",
+    "002b33f9c2da9cd5",
+    "00ffe72dbaa2e4ad",
+    "00edf53f9f87c188",
+    "004f579df5edabe2",
+    "00150dc7f7efa9e0",
+    "00372fe5a2bafcb5",
+    "00dcc40eb2aaeca5",
+    "002139f3839bdd94",
+    "004a5298d5cd8bc2",
+    "00f1e923c4dc9ad3",
+    "007d65aff4ecaae3",
+    "00fee62cd1c98fc6",
+    "00bda56fa9b1f7be",
+    "005e468ca8b0f6bf",
+    "007860aa948cca83",
+    "00140cc6acb4f2bb",
+    "003c24eee5fdbbf2",
+    "00a9b17bcdd593da",
+    "00455d97e9f1b7fe",
+    "004d559fa0b8feb7",
+    "00273ff5eef6b0f9",
+    "00524a80b7afe9a0",
+    "00c0d812b6aee8a1",
+    "0048509aafb7f1b8",
+    "00766ea4e7ffb9f0",
+    "000a12d89b83c58c",
+    "008d955fddc583ca",
+    "001e06ccd4cc8ac3",
+    "00435b918e96d099",
+    "001e06cceef6b0f9",
+    "00edf53fabb3f5bc",
+    "00647cb6f7efa9e0",
+    "003820ead5cd8bc2",
+    "00829a50928acc85",
+    "00edf53fa1b9ffb6",
+    "007860aab9a1e7ae",
+    "00b2aa60eef6b0f9",
+    "00baa268f3ebade4",
+    "003d25efd4cc8ac3",
+    "0048509a9e86c089",
+    "00435b91ccd492db",
+    "000119d3b5adeba2",
+    "00f0e822ebf3b5fc",
+    "00f9e12bd1c98fc6",
+    "000e16dcdec680c9",
+    "005f478db7afe9a0",
+    "00d5cd07869ed891",
+    "0048509addc583ca",
+    "007a62a8c0d89ed7",
+    "004c549edec680c9",
+    "0058408aa3bbfdb4",
+    "00aeb67caab2f4bd",
+    "00e7ff35dbc385cc",
+    "001a02c8a8b0f6bf",
+    "00abb379d7cf89c0",
+    "00b5ad67829adc95",
+    "00273ff5a6bef8b1",
+    "00455d97ddc583ca",
+    "005b4389839bdd94",
+    "00b4ac66f2eaace5",
+    "00746ca6e4fcbaf3",
+    "00342ce6968ec881",
+    "00859d57c7df99d0",
+    "00e7ff35d1c98fc6",
+    "00afb77db2aaeca5",
+    "00120ac0e4fcbaf3",
+    "00031bd1dec680c9",
+    "00968e449088ce87",
+    "00e1f933afb7f1b8",
+    "00d6ce04aeb6f0b9",
+    "006179b3a0b8feb7",
+    "00ffe72db6aee8a1",
+    "00afb77da8b0f6bf",
+    "00425a90d8c086cf",
+    "006a72b8b4aceaa3",
+    "007860aaf1e9afe6",
+    "005f478dc7df99d0",
+    "00322ae0f0e8aee7",
+    "00ddc50fc8d096df",
+    "008e965cdac284cd",
+    "007068a29981c78e",
+    "00b2aa60b7afe9a0",
+    "00eef63ca9b1f7be",
+    "00736ba1e1f9bff6",
+    "00d0c802c9d197de",
+    "0089915bafb7f1b8",
+    "00766ea4ffe7a1e8",
+    "00b9a16b978fc980",
+    "003c24eeacb4f2bb",
+    "008b9359dec680c9",
+    "006870babaa2e4ad",
+    "00938b41f5edabe2",
+    "00c9d11b9a82c48d",
+    "00140cc69189cf86",
+    "009f874db8a0e6af",
+    "00332be19189cf86",
+    "00405892b5adeba2",
+    "00362ee4938bcd84",
+    "0098804adac284cd",
+    "00627ab0e0f8bef7",
+    "00b8a06aa4bcfab3",
+    "007f67add7cf89c0",
+    "00cdd51ffde5a3ea",
+    "00839b51afb7f1b8",
+    "00b2aa60a9b1f7be",
+    "00e1f933ddc583ca",
+    "000810da9a82c48d",
+    "00fee62cfde5a3ea",
+    "00b4ac669088ce87",
+    "00e5fd379981c78e",
+    "006870ba9c84c28b",
+    "000018d2a7bff9b0",
+    "00859d57c8d096df",
+    "004a5298f8e0a6ef",
+    "00362ee4cfd791d8",
+    "006078b2b6aee8a1",
+    "008d955ffbe3a5ec",
+    "002f37fda3bbfdb4",
+    "009b8349f4ecaae3",
+    "00eef63cc2da9cd5",
+    "00fce42ec4dc9ad3",
+    "00e8f03ab0a8eea7",
+    "00667eb49880c68f",
+    "006b73b9d3cb8dc4",
+    "00cfd71da7bff9b0",
+    "00829a50e7ffb9f0",
+    "003921ebd9c187ce",
+    "007860aa829adc95",
+    "00acb47e879fd990",
+    "00d1c903e4fcbaf3",
+    "002e36fccad294dd",
+    "00322ae0d2ca8cc5",
+    "0059418bddc583ca",
+    "00968e448f97d198",
+    "003921ebd4cc8ac3",
+    "00667eb4d1c98fc6",
+    "00c0d812e1f9bff6",
+    "00cdd51fcad294dd",
+    "00263ef4d7cf89c0",
+    "002b33f9879fd990",
+    "00f3eb21d4cc8ac3",
+    "00e0f832bca4e2ab",
+    "007c64aefae2a4ed",
+    "00ced61cfbe3a5ec",
+    "007068a2d6ce88c1",
+    "00859d57f0e8aee7",
+    "00a9b17bc3db9dd4",
+    "00dec60cdfc781c8",
+    "007f67ad8991d79e",
+    "008f975dd7cf89c0",
+    "00879f55a5bdfbb2",
+    "006078b2ced690d9",
+    "004e569c978fc980",
+    "005f478daab2f4bd",
+    "0088905a9880c68f",
+    "00f7ef258e96d099",
+    "00e2fa30ddc583ca",
+    "00455d97d3cb8dc4",
+    "00322ae0adb5f3ba",
+    "00cad218968ec881",
+    "00aeb67c958dcb82",
+    "00c4dc16f3ebade4",
+    "007860aa8199df96",
+    "002b33f9adb5f3ba",
+    "008b9359cfd791d8",
+    "00e3fb31a7bff9b0",
+    "00041cd6dac284cd",
+    "00acb47ed9c187ce",
+    "00041cd6f9e1a7ee",
+    "00b7af659189cf86",
+    "005f478dc4dc9ad3",
+    "00f0e822f2eaace5",
+    "00baa268d6ce88c1",
+    "00766ea49e86c089",
+    "00223af0b9a1e7ae",
+    "002931fbe5fdbbf2",
+    "008b93598d95d39a",
+    "00455d97b2aaeca5",
+    "006179b38a92d49d",
+    "003b23e9b4aceaa3",
+    "000c14dee0f8bef7",
+    "00564e849981c78e",
+    "00657db7e3fbbdf4",
+    "009b8349e1f9bff6",
+    "0048509a849cda93",
+    "000e16dcb3abeda4",
+    "007860aafae2a4ed",
+    "00d0c8028b93d59c",
+    "00f6ee24d8c086cf",
+    "00f2ea20baa2e4ad",
+    "000b13d9ebf3b5fc",
+    "00a2ba70c3db9dd4",
+    "00bba369b6aee8a1",
+    "006f77bd859ddb92",
+    "00f2ea20dcc482cb",
+    "000a12d8958dcb82",
+    "00f9e12b8890d69f",
+    "00504882e2fabcf5",
+    "00c3db118b93d59c",
+    "00c1d913e6feb8f1",
+    "00eef63cd3cb8dc4",
+    "00332be1ffe7a1e8"
+   ],
+   "notes": "bytes [1, 2, 3, 4, 5, 6, 7] vary like a rolling code; replaying 256 captured frames"
+  },
+  {
+   "id": "0x3EC",
+   "name": "Unknown 0x3EC",
+   "bus": "main",
+   "period_ms": 20.0,
+   "payload": "15 B8",
+   "enabled": true
+  },
+  {
+   "id": "0x421",
+   "name": "Automatic Transmission",
+   "bus": "main",
+   "period_ms": 60.0,
+   "payload": "08 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x4CB",
+   "name": "Unknown 0x4CB",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "01 20 00 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x4CC",
+   "name": "ADAS errors",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "00 00 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x4DF",
+   "name": "Unknown 0x4DF",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 04",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 3,
+     "lsb": 2,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x4F6",
+   "name": "Page-slot prerequisite B",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "28 16 0E 82 A0 00 1A 0C",
+   "enabled": true
+  },
+  {
+   "id": "0x519",
+   "name": "Drive-mode switch / startup (raw)",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "00 F9 05 00 00 00 09 FD",
+   "enabled": true
+  },
+  {
+   "id": "0x51C",
+   "name": "Page-slot prerequisite A",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "48 00 00 E0 00 00 00 00",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 0,
+     "lsb": 0,
+     "width": 1,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x540",
+   "name": "Unknown 0x540",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 24 00 00 00 00 00 00",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 7,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x541",
+   "name": "Unknown 0x541",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00 00 00 00 83",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 7,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x542",
+   "name": "Unknown 0x542",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00 00 00 00 03",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 7,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x544",
+   "name": "Unknown 0x544",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x545",
+   "name": "Unknown 0x545",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00 00 00 00 03",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 7,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x54A",
+   "name": "HVAC 1",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "DA A0 70 0A 44 44 00 00",
+   "enabled": true,
+   "sequence": [
+    "daa0700a44440000",
+    "3ca0700a44440000"
+   ],
+   "notes": "2-frame repeating pattern (multiplexed payload)"
+  },
+  {
+   "id": "0x54B",
+   "name": "HVAC 2",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "06 78 10 01 0C 80 01 84",
+   "enabled": true
+  },
+  {
+   "id": "0x54C",
+   "name": "Unknown 0x54C",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "64 63 C0 E0 00 38 B1 AE",
+   "enabled": true
+  },
+  {
+   "id": "0x54D",
+   "name": "HVAC 4 (seat heat)",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 80 04 08 00 04 14 16",
+   "enabled": true
+  },
+  {
+   "id": "0x54E",
+   "name": "Unknown 0x54E",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00 00 C0 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x551",
+   "name": "Engine (coolant / MIL / cruise)",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "80 E0 00 80 FF 02 80 00",
+   "enabled": true
+  },
+  {
+   "id": "0x553",
+   "name": "Unknown 0x553",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 00 05 35",
+   "enabled": true
+  },
+  {
+   "id": "0x560",
+   "name": "Unknown 0x560",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "80 11 48 00",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 1,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x56C",
+   "name": "Chassis control / drive mode",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00 64 00 02",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 5,
+     "lsb": 0,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x56E",
+   "name": "Telematics",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "46 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x580",
+   "name": "Engine 3",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 A2 40 06 8C 30 20 3A",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 3,
+     "lsb": 1,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x5B0",
+   "name": "Unknown 0x5B0",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "04 80",
+   "enabled": true,
+   "counters": [
+    {
+     "byte": 1,
+     "lsb": 6,
+     "width": 2,
+     "step": 1
+    }
+   ]
+  },
+  {
+   "id": "0x5B4",
+   "name": "Unknown 0x5B4",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "FF FF FF FF FF FF FF 00",
+   "enabled": true
+  },
+  {
+   "id": "0x5B5",
+   "name": "Unknown 0x5B5",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "FF FF FF FF FF FF FF 00",
+   "enabled": true
+  },
+  {
+   "id": "0x5B6",
+   "name": "Unknown 0x5B6",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "FF FF FF FF FF FF FF 00",
+   "enabled": true
+  },
+  {
+   "id": "0x5B7",
+   "name": "Unknown 0x5B7",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "FC FC FC C7 CD FF 1F F8",
+   "enabled": true
+  },
+  {
+   "id": "0x5E4",
+   "name": "Unknown 0x5E4",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x5E8",
+   "name": "Unknown 0x5E8",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "00 00 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x5FE",
+   "name": "Unknown 0x5FE",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "80 00 FF FF 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x60D",
+   "name": "BCM",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "08 06 00 00 00 00 00 00",
+   "enabled": true
+  },
+  {
+   "id": "0x625",
+   "name": "BCM / IPDM",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "02 80 FF 1D 20 00",
+   "enabled": true
+  },
+  {
+   "id": "0x6C0",
+   "name": "Unknown 0x6C0",
+   "bus": "main",
+   "period_ms": 500.0,
+   "payload": "00",
+   "enabled": true
+  },
+  {
+   "id": "0x6E2",
+   "name": "Unknown 0x6E2",
+   "bus": "main",
+   "period_ms": 100.0,
+   "payload": "00 00 3E 00 4D 04 00 00",
+   "enabled": true
+  }
+ ]
+}

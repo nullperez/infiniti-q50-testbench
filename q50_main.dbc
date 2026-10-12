@@ -1,0 +1,580 @@
+VERSION "q50tb export"
+
+NS_ :
+
+BS_:
+
+BU_: BENCH METER VEHICLE
+
+BO_ 2 Steering_Angle: 8 VEHICLE
+ SG_ STEERING_ANGLE : 0|16@1- (-0.1,0) [-720|720] "deg" BENCH
+ SG_ STEERING_RATE : 23|8@0+ (4,0) [0|1020] "deg/s" BENCH
+ SG_ COUNTER : 35|4@0+ (1,0) [0|15] "" BENCH
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 352 Accelerator_Pedal: 8 VEHICLE
+ SG_ PEDAL_FULLY_PRESSED : 6|1@0+ (1,0) [0|1] "" BENCH
+ SG_ ACCEL_POSITION : 31|8@0+ (0.5,0) [0|100] "%" BENCH
+ SG_ ACCEL_POSITION_INV : 47|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 384 Engine_RPM: 8 VEHICLE
+ SG_ ENGINE_RPM : 7|16@0+ (0.125,0) [0|8000] "rpm" BENCH
+ SG_ ACCEL_POSITION : 47|8@0+ (0.5,0) [0|100] "%" BENCH
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" BENCH
+
+BO_ 386 Engine_2: 8 VEHICLE
+ SG_ COUNTER : 43|4@0+ (1,0) [0|15] "" BENCH
+ SG_ BRAKE_PRESSED : 54|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 421 AWD: 8 VEHICLE
+
+BO_ 534 BCM_lights: 3 VEHICLE
+ SG_ WIPER_STATE : 7|3@0+ (1,0) [0|7] "" BENCH
+ SG_ OP_STATE : 2|3@0+ (1,0) [0|7] "" BENCH
+ SG_ DRL_ON : 14|1@0+ (1,0) [0|1] "" BENCH
+ SG_ HEADLIGHTS : 13|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FOG_LIGHTS : 11|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CHECKSUM : 23|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 569 Pedal___cruise_switches: 8 VEHICLE
+ SG_ PEDAL : 7|8@0+ (1,0) [0|255] "" BENCH
+ SG_ PEDAL_INV : 15|8@0+ (1,0) [0|255] "" BENCH
+ SG_ PEDAL_RELEASED : 16|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CRUISE_MASTER : 17|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CRUISE_SWITCH : 31|8@0+ (1,0) [0|255] "" BENCH
+ SG_ COUNTER : 33|2@0+ (1,0) [0|3] "" BENCH
+
+BO_ 640 Cluster_Status_1__meter_: 8 METER
+ SG_ DRIVER_UNBUCKLED : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FUEL_LEVEL_NORM : 15|10@0+ (1,0) [0|1023] "" BENCH
+ SG_ SPEED_PROCESSED : 39|16@0+ (0.01,0) [0|655.35] "km/h" BENCH
+ SG_ FUEL_ADC : 55|10@0+ (1,0) [0|1023] "" BENCH
+
+BO_ 644 Front_wheel_speeds: 8 VEHICLE
+ SG_ FR_WHEEL_SPEED : 7|16@0+ (0.005,0) [0|300] "km/h" BENCH
+ SG_ FL_WHEEL_SPEED : 23|16@0+ (0.005,0) [0|300] "km/h" BENCH
+ SG_ VEHICLE_SPEED : 39|16@0+ (0.01,0) [0|300] "km/h" BENCH
+ SG_ COUNTER : 55|8@0+ (1,0) [0|255] "" BENCH
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 645 Rear_wheel_speeds: 8 VEHICLE
+ SG_ RR_WHEEL_SPEED : 7|16@0+ (0.005,0) [0|300] "km/h" BENCH
+ SG_ RL_WHEEL_SPEED : 23|16@0+ (0.005,0) [0|300] "km/h" BENCH
+ SG_ COUNTER : 55|8@0+ (1,0) [0|255] "" BENCH
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 658 Forces: 8 VEHICLE
+ SG_ LONG_ACCEL : 7|12@0+ (0.001,0) [0|4.095] "" BENCH
+ SG_ LAT_ACCEL : 11|12@0+ (0.001,0) [0|4.095] "" BENCH
+ SG_ YAW_RATE : 31|12@0+ (0.1,0) [0|409.5] "" BENCH
+ SG_ BRAKE_PRESSURE : 55|8@0+ (1,0) [0|255] "" BENCH
+ SG_ COUNTER : 57|2@0+ (1,0) [0|3] "" BENCH
+
+BO_ 683 Unresolved_0x2AB: 8 VEHICLE
+ SG_ WHEEL_ANGLE_CAND : 23|16@0+ (1,0) [0|65535] "" BENCH
+
+BO_ 689 ADAS: 6 VEHICLE
+ SG_ CRUISE_CONTROL : 7|2@0+ (1,0) [0|3] "" BENCH
+ SG_ CC_ENABLED : 5|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CC_BIT4 : 4|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DISTANCE_BARS : 3|2@0+ (1,0) [0|3] "" BENCH
+ SG_ DISPLAY_MPH : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ ADAPTIVE_CC : 0|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CAR_AHEAD : 15|2@0+ (1,0) [0|3] "" BENCH
+ SG_ LANE_WARN_LEFT : 13|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LANE_WARN_RIGHT : 12|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BSW_LEFT_BLINK : 11|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BSW_RIGHT_BLINK : 10|1@0+ (1,0) [0|1] "" BENCH
+ SG_ EMERGENCY_BRAKE_WARNING : 9|1@0+ (1,0) [0|1] "" BENCH
+ SG_ WINDING_ROAD : 8|1@0+ (1,0) [0|1] "" BENCH
+ SG_ EMG_BRAKE : 23|2@0+ (1,0) [0|3] "" BENCH
+ SG_ LANE_ASSIST : 21|2@0+ (1,0) [0|3] "" BENCH
+ SG_ BLIND_SPOT : 19|2@0+ (1,0) [0|3] "" BENCH
+ SG_ FEB_LIGHT_BLINK : 17|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FEB_LIGHT : 16|1@0+ (1,0) [0|1] "" BENCH
+ SG_ EMG_BRAKE_2 : 31|2@0+ (1,0) [0|3] "" BENCH
+ SG_ LANE_ASSIST_2 : 29|2@0+ (1,0) [0|3] "" BENCH
+ SG_ BLIND_SPOT_2 : 27|2@0+ (1,0) [0|3] "" BENCH
+ SG_ CC_SPEED : 39|8@0+ (1,-1) [-1|253] "" BENCH
+ SG_ TONES : 47|3@0+ (1,0) [0|7] "" BENCH
+ SG_ SWITCH_PAGE : 44|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BLINK_SPEED : 43|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PROMPT_PAGE : 42|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 734 Cluster_Status_2__meter_: 8 METER
+ SG_ PADDLE_DOWN_REQ : 5|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PADDLE_UP_REQ : 4|1@0+ (1,0) [0|1] "" BENCH
+ SG_ STICK_DOWN_REQ : 3|1@0+ (1,0) [0|1] "" BENCH
+ SG_ STICK_UP_REQ : 2|1@0+ (1,0) [0|1] "" BENCH
+ SG_ AUTO_MODE : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MANUAL_MODE : 0|1@0+ (1,0) [0|1] "" BENCH
+ SG_ AVG_FUEL_ECONOMY : 31|12@0+ (0.01,0) [0|40.95] "km/L" BENCH
+ SG_ DISTANCE_TO_EMPTY : 55|16@0+ (0.1,0) [0|6553.5] "km" BENCH
+
+BO_ 768 Unresolved_0x300: 1 VEHICLE
+ SG_ STEER_EFFORT_CAND : 7|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 849 Intelligent_Key: 8 VEHICLE
+ SG_ UNLOCK : 15|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LOCK : 14|1@0+ (1,0) [0|1] "" BENCH
+ SG_ STEERING_LOCK_REG_COMPLETE : 47|1@0+ (1,0) [0|1] "" BENCH
+ SG_ KEY_SYSTEM_ERROR : 46|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DOUBLE_BEEP : 45|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FAST_BEEP : 44|1@0+ (1,0) [0|1] "" BENCH
+ SG_ KEY_PROMPT : 43|4@0+ (1,0) [0|15] "" BENCH
+ SG_ BEEP : 55|1@0+ (1,0) [0|1] "" BENCH
+ SG_ AUTO_HIGH_BEAM : 52|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 852 Chassis_Control__ABS_: 8 VEHICLE
+ SG_ VEHICLE_SPEED : 7|16@0+ (0.01,0) [0|300] "km/h" BENCH
+ SG_ TCS_STATE : 39|3@0+ (1,0) [0|7] "" BENCH
+ SG_ ABS : 36|1@0+ (1,0) [0|1] "" BENCH
+ SG_ ABS_LATCH : 35|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BRAKE : 34|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BRAKE_LATCH : 33|1@0+ (1,0) [0|1] "" BENCH
+ SG_ COUNTER : 44|2@0+ (1,0) [0|3] "" BENCH
+ SG_ BRAKE_PRESSED : 52|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 853 Cluster_Status_3__meter_: 8 METER
+ SG_ SPEED_PROCESSED : 7|16@0+ (0.01,0) [0|655.35] "km/h" BENCH
+ SG_ SPEED_DISPLAYED : 23|16@0+ (0.01,0) [0|655.35] "km/h" BENCH
+
+BO_ 856 Body___lamps: 8 VEHICLE
+ SG_ DIM_BACKLIGHT : 15|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RIGHT_BLINKER_REQ : 18|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LEFT_BLINKER_REQ : 17|1@0+ (1,0) [0|1] "" BENCH
+ SG_ TRUNK_OPEN : 16|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LOW_OIL_PRESSURE : 29|1@0+ (1,0) [0|1] "" BENCH
+ SG_ TPMS_LIGHT : 39|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 861 Brake_signal: 8 VEHICLE
+ SG_ UNKNOWN_B4_6 : 38|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BRAKE_PRESSED : 36|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 901 TPMS: 8 VEHICLE
+ SG_ PRESSURES_WHILE_DRIVING : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FR_FLAT : 15|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FR_WARNING : 11|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FR_PRESSURE : 23|8@0+ (0.25,0) [0|63.75] "psi" BENCH
+ SG_ FR_VALID : 55|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FL_FLAT : 14|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FL_WARNING : 10|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FL_PRESSURE : 31|8@0+ (0.25,0) [0|63.75] "psi" BENCH
+ SG_ FL_VALID : 54|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RR_FLAT : 13|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RR_WARNING : 9|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RR_PRESSURE : 39|8@0+ (0.25,0) [0|63.75] "psi" BENCH
+ SG_ RR_VALID : 53|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RL_FLAT : 12|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RL_WARNING : 8|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RL_PRESSURE : 47|8@0+ (0.25,0) [0|63.75] "psi" BENCH
+ SG_ RL_VALID : 52|1@0+ (1,0) [0|1] "" BENCH
+ SG_ TARGET_FRONT : 63|4@0+ (10,190) [190|340] "kPa" BENCH
+ SG_ TARGET_REAR : 59|4@0+ (10,190) [190|340] "kPa" BENCH
+
+BO_ 943 Hazard_switch: 1 VEHICLE
+ SG_ HAZARD_BUTTON : 7|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 1057 Automatic_Transmission: 3 VEHICLE
+ SG_ GEAR : 7|5@0+ (1,0) [0|31] "" BENCH
+ SG_ AT_ERROR_A : 2|1@0+ (1,0) [0|1] "" BENCH
+ SG_ AT_ERROR_B : 0|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FLASH_GEAR : 10|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BEEP : 22|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 1228 ADAS_errors: 5 VEHICLE
+ SG_ UNAVAIL_HIGH_ACCEL_TEMP_DCA : 2|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_HIGH_ACCEL_TEMP_BCI : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_HIGH_ACCEL_TEMP_FEB : 0|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_CLEAN_REAR_CAM_LDW : 15|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_CLEAN_REAR_CAM_BSW : 14|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_PFCW : 13|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_LDW : 12|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_BSW : 11|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_HIGH_CABIN_TEMP_LDW : 10|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_HIGH_CABIN_TEMP_LDP : 9|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_HIGH_CABIN_TEMP_BSI : 8|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_FRONT_RADAR_ICC : 23|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_FRONT_RADAR_PFCW : 22|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_FRONT_RADAR_DCA : 21|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_FRONT_RADAR_FEB : 20|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_SELECT_DRIVING_AIDS_A : 19|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_SELECT_DRIVING_AIDS_B : 18|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CURRENTLY_UNAVAIL_ICC_A : 17|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CURRENTLY_UNAVAIL_ICC_B : 16|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_SIDE_RADAR_BSW : 27|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_SIDE_RADAR_BSI : 26|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNAVAIL_SIDE_RADAR_BCI : 25|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_DCA : 39|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_LDP : 38|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_BSI : 37|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_FEB : 36|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MALFUNCTION_BCI : 35|1@0+ (1,0) [0|1] "" BENCH
+ SG_ SYSTEM_OFF_BCI : 34|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 1270 Page_slot_prerequisite_B: 8 VEHICLE
+
+BO_ 1305 Drive_mode_switch___startup__raw_: 8 VEHICLE
+ SG_ STATE : 7|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 1307 Service_distance: 6 VEHICLE
+ SG_ SERVICE_DISTANCE : 37|14@0+ (5,0) [0|81915] "km" BENCH
+
+BO_ 1308 Page_slot_prerequisite_A: 8 VEHICLE
+
+BO_ 1354 HVAC_1: 8 VEHICLE
+ SG_ DRIVER_TEMP : 39|8@0+ (1,0) [0|255] "" BENCH
+ SG_ PASSENGER_TEMP : 47|8@0+ (1,0) [0|255] "" BENCH
+
+BO_ 1355 HVAC_2: 8 VEHICLE
+ SG_ AIR_DIRECTION : 21|3@0+ (1,0) [0|7] "" BENCH
+ SG_ DUAL : 30|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RECIRCULATION : 25|1@0+ (1,0) [0|1] "" BENCH
+ SG_ BLOWER_SPEED : 37|4@0+ (1,0) [0|15] "" BENCH
+ SG_ STEERING_HEATER : 46|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 1357 HVAC_4__seat_heat_: 8 VEHICLE
+ SG_ DRIVER_SEAT_AUTO : 9|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PASSENGER_SEAT_AUTO : 8|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DRIVER_SEAT_OFF : 42|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DRIVER_SEAT_LOW : 41|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DRIVER_SEAT_MID : 40|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DRIVER_SEAT_HIGH : 55|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PASSENGER_SEAT_OFF : 50|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PASSENGER_SEAT_LOW : 49|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PASSENGER_SEAT_MID : 48|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PASSENGER_SEAT_HIGH : 63|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 1361 Engine__coolant___MIL___cruise_: 8 VEHICLE
+ SG_ COOLANT_TEMP : 7|8@0+ (1,-40) [-40|215] "degC" BENCH
+ SG_ FUEL_USAGE_COUNTER : 15|8@0+ (1,0) [0|255] "" BENCH
+ SG_ MIL_SOLID : 29|1@0+ (1,0) [0|1] "" BENCH
+ SG_ MIL_FLASH : 30|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CRUISE_SET_SPEED : 39|8@0+ (1,0) [0|255] "mph" BENCH
+ SG_ CRUISE_ICON : 47|4@0+ (1,0) [0|15] "" BENCH
+
+BO_ 1388 Chassis_control___drive_mode: 6 VEHICLE
+ SG_ TRACE_BLUE_SQUARES : 6|1@0+ (1,0) [0|1] "" BENCH
+ SG_ TRACE_2_SQUARES_WHEELS : 5|1@0+ (1,0) [0|1] "" BENCH
+ SG_ TRACE_BLUE_LINES_WHEELS : 4|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CHASSIS_ERROR : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ TRACE_SADDLE_CURVE : 14|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DRIVE_MODE : 13|3@0+ (1,0) [0|7] "" BENCH
+ SG_ QUAD_BEEP : 10|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CONTINUOUS_BEEP : 9|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FL_WHEEL_HIGHLIGHT : 22|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FR_WHEEL_HIGHLIGHT : 20|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RL_WHEEL_HIGHLIGHT : 18|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RR_WHEEL_HIGHLIGHT : 16|1@0+ (1,0) [0|1] "" BENCH
+ SG_ COUNTER : 41|2@0+ (1,0) [0|3] "" BENCH
+
+BO_ 1390 Telematics: 4 VEHICLE
+ SG_ UNKNOWN_B0_7 : 7|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNKNOWN_B0_6 : 6|1@0+ (1,0) [0|1] "" BENCH
+ SG_ UNLOCK_CMD : 0|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LOCK_CMD : 15|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 1408 Engine_3: 8 VEHICLE
+ SG_ ENGINE_TORQUE : 7|16@0+ (0.0625,0) [0|4095.94] "Nm" BENCH
+ SG_ LOW_OIL_PRESSURE : 16|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LOOSE_FUEL_CAP : 24|1@0+ (1,0) [0|1] "" BENCH
+ SG_ OIL_TEMP : 39|8@0+ (1,-40) [-40|215] "degC" BENCH
+ SG_ ECO_LIGHT : 46|1@0+ (1,0) [0|1] "" BENCH
+
+BO_ 1477 Cluster_Status_4__meter_: 8 METER
+ SG_ METER_OFF : 7|1@0+ (1,0) [0|1] "" BENCH
+ SG_ METER_ON : 6|1@0+ (1,0) [0|1] "" BENCH
+ SG_ GAS_LIGHT : 5|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LOW_BRAKE_FLUID : 3|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PARKING_BRAKE : 2|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RUNNING : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ ODOMETER_RAW : 15|24@0+ (1,0) [0|1.67772e+07] "" BENCH
+
+BO_ 1549 BCM: 8 VEHICLE
+ SG_ TRUNK : 7|1@0+ (1,0) [0|1] "" BENCH
+ SG_ REAR_PASSENGER_DOOR : 6|1@0+ (1,0) [0|1] "" BENCH
+ SG_ REAR_DRIVER_DOOR : 5|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PASSENGER_DOOR : 4|1@0+ (1,0) [0|1] "" BENCH
+ SG_ DRIVER_DOOR : 3|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PARKING_LIGHTS : 2|1@0+ (1,0) [0|1] "" BENCH
+ SG_ HEADLIGHTS : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ RIGHT_TURN : 14|1@0+ (1,0) [0|1] "" BENCH
+ SG_ LEFT_TURN : 13|1@0+ (1,0) [0|1] "" BENCH
+ SG_ HIGH_BEAM : 11|1@0+ (1,0) [0|1] "" BENCH
+ SG_ IG_RUN : 10|1@0+ (1,0) [0|1] "" BENCH
+ SG_ ACC : 9|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FOG_LIGHTS : 8|1@0+ (1,0) [0|1] "" BENCH
+ SG_ ALL_DOORS_LOCKED : 20|1@0+ (1,0) [0|1] "" BENCH
+ SG_ REAR_FOG : 18|1@0+ (1,0) [0|1] "" BENCH
+ SG_ CHIMES : 29|5@0+ (1,0) [0|31] "" BENCH
+
+BO_ 1573 BCM___IPDM: 6 VEHICLE
+ SG_ START_STATE : 5|2@0+ (1,0) [0|3] "" BENCH
+ SG_ WIPER_LOW : 2|1@0+ (1,0) [0|1] "" BENCH
+ SG_ WIPERS_NOT_AT_TOP : 1|1@0+ (1,0) [0|1] "" BENCH
+ SG_ AC_COMPRESSOR_OR_FAN : 15|1@0+ (1,0) [0|1] "" BENCH
+ SG_ PARKING_LIGHTS : 14|1@0+ (1,0) [0|1] "" BENCH
+ SG_ HEADLIGHT : 13|1@0+ (1,0) [0|1] "" BENCH
+ SG_ HIGH_BEAM : 12|1@0+ (1,0) [0|1] "" BENCH
+ SG_ FOG_LIGHTS : 11|1@0+ (1,0) [0|1] "" BENCH
+ SG_ IG_RUN : 28|1@0+ (1,0) [0|1] "" BENCH
+
+CM_ SG_ 2 STEERING_ANGLE "[documented] signed little-endian, factor -0.1 deg (README).";
+CM_ SG_ 2 STEERING_RATE "[probable] absolute rate, factor ~4 deg/s";
+CM_ SG_ 2 COUNTER "[probable] README says byte 3 [3:0]; idle capture shows the rolling nibble in byte 4 [3:0].";
+CM_ SG_ 2 CHECKSUM "[probable] observed: B7 = XOR of all nibbles of B0..B6 (captures).";
+CM_ SG_ 352 PEDAL_FULLY_PRESSED "[candidate]";
+CM_ SG_ 352 ACCEL_POSITION "[documented]";
+CM_ SG_ 352 ACCEL_POSITION_INV "[documented] 0xFF - byte 3";
+CM_ SG_ 384 ENGINE_RPM "[confirmed] raw = rpm * 8, big-endian (bench confirmed)";
+CM_ SG_ 384 ACCEL_POSITION "[documented]";
+CM_ SG_ 384 COUNTER "[documented] README: byte 6 counter; only the low nibble rolls in captures (upper nibble kept).";
+CM_ SG_ 386 COUNTER "[documented]";
+CM_ SG_ 386 BRAKE_PRESSED "[documented]";
+CM_ SG_ 534 WIPER_STATE "[candidate]";
+CM_ SG_ 534 OP_STATE "[candidate]";
+CM_ SG_ 534 DRL_ON "[documented]";
+CM_ SG_ 534 HEADLIGHTS "[documented]";
+CM_ SG_ 534 FOG_LIGHTS "[documented]";
+CM_ SG_ 534 CHECKSUM "[candidate] observed: last byte = (B0+B1+0x72) & 0xFF in idle capture";
+CM_ SG_ 569 PEDAL "[candidate] ~100*raw/255 %, not calibrated";
+CM_ SG_ 569 PEDAL_INV "[candidate] ~0xFF - byte 0";
+CM_ SG_ 569 PEDAL_RELEASED "[candidate] 0x81 released, 0x80 pressed";
+CM_ SG_ 569 CRUISE_MASTER "[probable] correlates with cruise enabled on meter";
+CM_ SG_ 569 CRUISE_SWITCH "[candidate] idle 0x20; 0x08/0x10 during SET-/RES+ presses";
+CM_ SG_ 569 COUNTER "[documented]";
+CM_ SG_ 640 DRIVER_UNBUCKLED "[documented]";
+CM_ SG_ 640 FUEL_LEVEL_NORM "[documented] packed 10-bit fuel candidate; meter filters the resistive sender input";
+CM_ SG_ 640 SPEED_PROCESSED "[documented]";
+CM_ SG_ 640 FUEL_ADC "[documented] changes with sender resistance AND supply voltage";
+CM_ SG_ 644 FR_WHEEL_SPEED "[documented]";
+CM_ SG_ 644 FL_WHEEL_SPEED "[documented]";
+CM_ SG_ 644 VEHICLE_SPEED "[candidate] observed in driving capture: equals 0x354 vehicle speed (km/h x 100)";
+CM_ SG_ 644 COUNTER "[documented]";
+CM_ SG_ 644 CHECKSUM "[probable] observed: B7 = (sum(B0..B6) + 0x86) & 0xFF";
+CM_ SG_ 645 RR_WHEEL_SPEED "[documented]";
+CM_ SG_ 645 RL_WHEEL_SPEED "[documented]";
+CM_ SG_ 645 COUNTER "[documented]";
+CM_ SG_ 645 CHECKSUM "[probable] observed: B7 = (sum(B0..B6) + 0x87) & 0xFF";
+CM_ SG_ 658 LONG_ACCEL "[candidate] signedness/offset and units not established";
+CM_ SG_ 658 LAT_ACCEL "[candidate]";
+CM_ SG_ 658 YAW_RATE "[candidate]";
+CM_ SG_ 658 BRAKE_PRESSURE "[documented] raw, not calibrated";
+CM_ SG_ 658 COUNTER "[documented]";
+CM_ SG_ 683 WHEEL_ANGLE_CAND "[candidate] suggested wheel angle";
+CM_ SG_ 689 CRUISE_CONTROL "[documented]";
+CM_ SG_ 689 CC_ENABLED "[documented]";
+CM_ SG_ 689 CC_BIT4 "[candidate] appears in older enum tables; do not treat as a confirmed icon bit";
+CM_ SG_ 689 DISTANCE_BARS "[documented]";
+CM_ SG_ 689 DISPLAY_MPH "[documented]";
+CM_ SG_ 689 ADAPTIVE_CC "[documented]";
+CM_ SG_ 689 CAR_AHEAD "[documented]";
+CM_ SG_ 689 LANE_WARN_LEFT "[documented]";
+CM_ SG_ 689 LANE_WARN_RIGHT "[documented]";
+CM_ SG_ 689 BSW_LEFT_BLINK "[documented]";
+CM_ SG_ 689 BSW_RIGHT_BLINK "[documented]";
+CM_ SG_ 689 EMERGENCY_BRAKE_WARNING "[documented]";
+CM_ SG_ 689 WINDING_ROAD "[documented]";
+CM_ SG_ 689 EMG_BRAKE "[documented]";
+CM_ SG_ 689 LANE_ASSIST "[documented]";
+CM_ SG_ 689 BLIND_SPOT "[documented]";
+CM_ SG_ 689 FEB_LIGHT_BLINK "[documented]";
+CM_ SG_ 689 FEB_LIGHT "[documented]";
+CM_ SG_ 689 EMG_BRAKE_2 "[documented]";
+CM_ SG_ 689 LANE_ASSIST_2 "[documented]";
+CM_ SG_ 689 BLIND_SPOT_2 "[documented]";
+CM_ SG_ 689 CC_SPEED "[documented] 0x00 blank, 0x01-0xFE = speed + 1 (shown as raw-1), 0xFF '- - -'";
+CM_ SG_ 689 TONES "[documented]";
+CM_ SG_ 689 SWITCH_PAGE "[documented] sometimes switches page without beep; retrigger rules unresolved";
+CM_ SG_ 689 BLINK_SPEED "[documented]";
+CM_ SG_ 689 PROMPT_PAGE "[documented] prompts ADAS page + beep";
+CM_ SG_ 734 PADDLE_DOWN_REQ "[documented]";
+CM_ SG_ 734 PADDLE_UP_REQ "[documented]";
+CM_ SG_ 734 STICK_DOWN_REQ "[documented]";
+CM_ SG_ 734 STICK_UP_REQ "[documented]";
+CM_ SG_ 734 AUTO_MODE "[candidate]";
+CM_ SG_ 734 MANUAL_MODE "[documented]";
+CM_ SG_ 734 AVG_FUEL_ECONOMY "[documented] x 2.3521458 = US mpg; low nibble of B4 not part of it";
+CM_ SG_ 734 DISTANCE_TO_EMPTY "[documented]";
+CM_ SG_ 768 STEER_EFFORT_CAND "[candidate] suggested steering effort, uncalibrated";
+CM_ SG_ 849 UNLOCK "[documented]";
+CM_ SG_ 849 LOCK "[documented]";
+CM_ SG_ 849 STEERING_LOCK_REG_COMPLETE "[documented]";
+CM_ SG_ 849 KEY_SYSTEM_ERROR "[documented]";
+CM_ SG_ 849 DOUBLE_BEEP "[documented]";
+CM_ SG_ 849 FAST_BEEP "[documented]";
+CM_ SG_ 849 KEY_PROMPT "[documented] high bits of byte 5 show priority/suppression when combined";
+CM_ SG_ 849 BEEP "[documented]";
+CM_ SG_ 849 AUTO_HIGH_BEAM "[documented]";
+CM_ SG_ 849 CHECKSUM "[candidate] observed: B7 = sum(B0..B6) & 0xFF in idle capture";
+CM_ SG_ 852 VEHICLE_SPEED "[documented]";
+CM_ SG_ 852 TCS_STATE "[documented]";
+CM_ SG_ 852 ABS "[documented] sequence dependent: see behaviour notes";
+CM_ SG_ 852 ABS_LATCH "[documented]";
+CM_ SG_ 852 BRAKE "[documented]";
+CM_ SG_ 852 BRAKE_LATCH "[documented]";
+CM_ SG_ 852 COUNTER "[documented] 2-bit counter (00,08,10,18)";
+CM_ SG_ 852 BRAKE_PRESSED "[documented]";
+CM_ SG_ 853 SPEED_PROCESSED "[documented]";
+CM_ SG_ 853 SPEED_DISPLAYED "[documented]";
+CM_ SG_ 856 DIM_BACKLIGHT "[documented]";
+CM_ SG_ 856 RIGHT_BLINKER_REQ "[candidate] no visible effect on the bench";
+CM_ SG_ 856 LEFT_BLINKER_REQ "[candidate] no visible effect on the bench";
+CM_ SG_ 856 TRUNK_OPEN "[documented]";
+CM_ SG_ 856 LOW_OIL_PRESSURE "[documented]";
+CM_ SG_ 856 TPMS_LIGHT "[documented]";
+CM_ SG_ 861 UNKNOWN_B4_6 "[candidate]";
+CM_ SG_ 861 BRAKE_PRESSED "[documented]";
+CM_ SG_ 901 PRESSURES_WHILE_DRIVING "[documented] 0 = 'tire pressures appear while driving'";
+CM_ SG_ 901 FR_FLAT "[documented]";
+CM_ SG_ 901 FR_WARNING "[documented]";
+CM_ SG_ 901 FR_PRESSURE "[documented]";
+CM_ SG_ 901 FR_VALID "[documented]";
+CM_ SG_ 901 FL_FLAT "[documented]";
+CM_ SG_ 901 FL_WARNING "[documented]";
+CM_ SG_ 901 FL_PRESSURE "[documented]";
+CM_ SG_ 901 FL_VALID "[documented]";
+CM_ SG_ 901 RR_FLAT "[documented]";
+CM_ SG_ 901 RR_WARNING "[documented]";
+CM_ SG_ 901 RR_PRESSURE "[documented]";
+CM_ SG_ 901 RR_VALID "[documented]";
+CM_ SG_ 901 RL_FLAT "[documented]";
+CM_ SG_ 901 RL_WARNING "[documented]";
+CM_ SG_ 901 RL_PRESSURE "[documented]";
+CM_ SG_ 901 RL_VALID "[documented]";
+CM_ SG_ 901 TARGET_FRONT "[documented]";
+CM_ SG_ 901 TARGET_REAR "[documented]";
+CM_ SG_ 943 HAZARD_BUTTON "[documented]";
+CM_ SG_ 1057 GEAR "[documented]";
+CM_ SG_ 1057 AT_ERROR_A "[documented]";
+CM_ SG_ 1057 AT_ERROR_B "[documented]";
+CM_ SG_ 1057 FLASH_GEAR "[documented]";
+CM_ SG_ 1057 BEEP "[documented]";
+CM_ SG_ 1228 UNAVAIL_HIGH_ACCEL_TEMP_DCA "[documented]";
+CM_ SG_ 1228 UNAVAIL_HIGH_ACCEL_TEMP_BCI "[documented]";
+CM_ SG_ 1228 UNAVAIL_HIGH_ACCEL_TEMP_FEB "[documented]";
+CM_ SG_ 1228 UNAVAIL_CLEAN_REAR_CAM_LDW "[documented]";
+CM_ SG_ 1228 UNAVAIL_CLEAN_REAR_CAM_BSW "[documented]";
+CM_ SG_ 1228 MALFUNCTION_PFCW "[documented]";
+CM_ SG_ 1228 MALFUNCTION_LDW "[documented]";
+CM_ SG_ 1228 MALFUNCTION_BSW "[documented]";
+CM_ SG_ 1228 UNAVAIL_HIGH_CABIN_TEMP_LDW "[documented]";
+CM_ SG_ 1228 UNAVAIL_HIGH_CABIN_TEMP_LDP "[documented]";
+CM_ SG_ 1228 UNAVAIL_HIGH_CABIN_TEMP_BSI "[documented]";
+CM_ SG_ 1228 UNAVAIL_FRONT_RADAR_ICC "[documented]";
+CM_ SG_ 1228 UNAVAIL_FRONT_RADAR_PFCW "[documented]";
+CM_ SG_ 1228 UNAVAIL_FRONT_RADAR_DCA "[documented]";
+CM_ SG_ 1228 UNAVAIL_FRONT_RADAR_FEB "[documented]";
+CM_ SG_ 1228 UNAVAIL_SELECT_DRIVING_AIDS_A "[documented]";
+CM_ SG_ 1228 UNAVAIL_SELECT_DRIVING_AIDS_B "[documented]";
+CM_ SG_ 1228 CURRENTLY_UNAVAIL_ICC_A "[documented]";
+CM_ SG_ 1228 CURRENTLY_UNAVAIL_ICC_B "[documented]";
+CM_ SG_ 1228 UNAVAIL_SIDE_RADAR_BSW "[documented]";
+CM_ SG_ 1228 UNAVAIL_SIDE_RADAR_BSI "[documented]";
+CM_ SG_ 1228 UNAVAIL_SIDE_RADAR_BCI "[documented]";
+CM_ SG_ 1228 MALFUNCTION_DCA "[documented]";
+CM_ SG_ 1228 MALFUNCTION_LDP "[documented]";
+CM_ SG_ 1228 MALFUNCTION_BSI "[documented]";
+CM_ SG_ 1228 MALFUNCTION_FEB "[documented]";
+CM_ SG_ 1228 MALFUNCTION_BCI "[documented]";
+CM_ SG_ 1228 SYSTEM_OFF_BCI "[documented]";
+CM_ SG_ 1305 STATE "[candidate] startup E0 -> 80 -> 00; switch sequences 14/06/04/16";
+CM_ SG_ 1307 SERVICE_DISTANCE "[candidate] candidate: raw*5 km; captured message displayed 4060 mi";
+CM_ SG_ 1354 DRIVER_TEMP "[documented]";
+CM_ SG_ 1354 PASSENGER_TEMP "[documented]";
+CM_ SG_ 1355 AIR_DIRECTION "[documented]";
+CM_ SG_ 1355 DUAL "[documented]";
+CM_ SG_ 1355 RECIRCULATION "[documented]";
+CM_ SG_ 1355 BLOWER_SPEED "[documented] README masks 0x0C..0x3C are whole-byte; enum values here are the extracted field";
+CM_ SG_ 1355 STEERING_HEATER "[documented]";
+CM_ SG_ 1357 DRIVER_SEAT_AUTO "[documented]";
+CM_ SG_ 1357 PASSENGER_SEAT_AUTO "[documented]";
+CM_ SG_ 1357 DRIVER_SEAT_OFF "[documented]";
+CM_ SG_ 1357 DRIVER_SEAT_LOW "[documented]";
+CM_ SG_ 1357 DRIVER_SEAT_MID "[documented]";
+CM_ SG_ 1357 DRIVER_SEAT_HIGH "[documented]";
+CM_ SG_ 1357 PASSENGER_SEAT_OFF "[documented]";
+CM_ SG_ 1357 PASSENGER_SEAT_LOW "[documented]";
+CM_ SG_ 1357 PASSENGER_SEAT_MID "[documented]";
+CM_ SG_ 1357 PASSENGER_SEAT_HIGH "[documented]";
+CM_ SG_ 1361 COOLANT_TEMP "[probable] bench encoding raw = degC + 40";
+CM_ SG_ 1361 FUEL_USAGE_COUNTER "[documented] cumulative fuel use; omitting 0x551 while moving spikes economy";
+CM_ SG_ 1361 MIL_SOLID "[documented]";
+CM_ SG_ 1361 MIL_FLASH "[documented]";
+CM_ SG_ 1361 CRUISE_SET_SPEED "[documented] 0x33 displayed 51 mph";
+CM_ SG_ 1361 CRUISE_ICON "[documented] upper-nibble whole-byte masks; interaction with 0x2B1 not isolated";
+CM_ SG_ 1388 TRACE_BLUE_SQUARES "[documented]";
+CM_ SG_ 1388 TRACE_2_SQUARES_WHEELS "[documented]";
+CM_ SG_ 1388 TRACE_BLUE_LINES_WHEELS "[documented]";
+CM_ SG_ 1388 CHASSIS_ERROR "[candidate] mask 0x02 associated with chassis-system error";
+CM_ SG_ 1388 TRACE_SADDLE_CURVE "[documented]";
+CM_ SG_ 1388 DRIVE_MODE "[documented]";
+CM_ SG_ 1388 QUAD_BEEP "[documented]";
+CM_ SG_ 1388 CONTINUOUS_BEEP "[documented]";
+CM_ SG_ 1388 FL_WHEEL_HIGHLIGHT "[documented]";
+CM_ SG_ 1388 FR_WHEEL_HIGHLIGHT "[documented]";
+CM_ SG_ 1388 RL_WHEEL_HIGHLIGHT "[documented]";
+CM_ SG_ 1388 RR_WHEEL_HIGHLIGHT "[documented]";
+CM_ SG_ 1388 COUNTER "[probable]";
+CM_ SG_ 1390 UNKNOWN_B0_7 "[candidate]";
+CM_ SG_ 1390 UNKNOWN_B0_6 "[candidate]";
+CM_ SG_ 1390 UNLOCK_CMD "[documented]";
+CM_ SG_ 1390 LOCK_CMD "[documented]";
+CM_ SG_ 1408 ENGINE_TORQUE "[documented]";
+CM_ SG_ 1408 LOW_OIL_PRESSURE "[documented]";
+CM_ SG_ 1408 LOOSE_FUEL_CAP "[documented]";
+CM_ SG_ 1408 OIL_TEMP "[candidate] README 'raw degC + 40' is ambiguous (+40 vs -40)";
+CM_ SG_ 1408 ECO_LIGHT "[documented]";
+CM_ SG_ 1477 METER_OFF "[documented]";
+CM_ SG_ 1477 METER_ON "[documented]";
+CM_ SG_ 1477 GAS_LIGHT "[documented]";
+CM_ SG_ 1477 LOW_BRAKE_FLUID "[documented] latest README bit 3; early note said bit 4";
+CM_ SG_ 1477 PARKING_BRAKE "[documented]";
+CM_ SG_ 1477 RUNNING "[candidate]";
+CM_ SG_ 1477 ODOMETER_RAW "[documented] byte order / unit not established";
+CM_ SG_ 1549 TRUNK "[documented]";
+CM_ SG_ 1549 REAR_PASSENGER_DOOR "[documented]";
+CM_ SG_ 1549 REAR_DRIVER_DOOR "[documented]";
+CM_ SG_ 1549 PASSENGER_DOOR "[documented]";
+CM_ SG_ 1549 DRIVER_DOOR "[documented]";
+CM_ SG_ 1549 PARKING_LIGHTS "[documented]";
+CM_ SG_ 1549 HEADLIGHTS "[documented] with LH/RH headlight inputs off this latches 'Headlight System Error'";
+CM_ SG_ 1549 RIGHT_TURN "[documented]";
+CM_ SG_ 1549 LEFT_TURN "[documented]";
+CM_ SG_ 1549 HIGH_BEAM "[documented]";
+CM_ SG_ 1549 IG_RUN "[documented]";
+CM_ SG_ 1549 ACC "[documented]";
+CM_ SG_ 1549 FOG_LIGHTS "[documented]";
+CM_ SG_ 1549 ALL_DOORS_LOCKED "[documented]";
+CM_ SG_ 1549 REAR_FOG "[documented]";
+CM_ SG_ 1549 CHIMES "[documented] startup byte 0x2A = field 0x15";
+CM_ SG_ 1573 START_STATE "[documented]";
+CM_ SG_ 1573 WIPER_LOW "[documented]";
+CM_ SG_ 1573 WIPERS_NOT_AT_TOP "[documented]";
+CM_ SG_ 1573 AC_COMPRESSOR_OR_FAN "[documented]";
+CM_ SG_ 1573 PARKING_LIGHTS "[documented]";
+CM_ SG_ 1573 HEADLIGHT "[documented]";
+CM_ SG_ 1573 HIGH_BEAM "[documented]";
+CM_ SG_ 1573 FOG_LIGHTS "[documented]";
+CM_ SG_ 1573 IG_RUN "[documented]";
+
+VAL_ 689 CRUISE_CONTROL 0 "None" 1 "CC icon" 2 "CC blink" 3 "Yellow CC (warning)" ;
+VAL_ 689 DISTANCE_BARS 0 "No bars" 1 "1 bar" 2 "2 bars" 3 "3 bars" ;
+VAL_ 689 CAR_AHEAD 0 "None" 1 "White car ahead" 2 "Yellow blinking car" 3 "Crash alert" ;
+VAL_ 689 EMG_BRAKE 0 "Disabled" 1 "Enabled" 2 "White blink (warning icon)" 3 "Yellow solid (warning icon)" ;
+VAL_ 689 LANE_ASSIST 0 "Disabled" 1 "Enabled" 2 "White blink (warning icon)" 3 "Yellow solid (warning icon)" ;
+VAL_ 689 BLIND_SPOT 0 "Disabled" 1 "Enabled" 2 "White blink (warning icon)" 3 "Yellow solid (warning icon)" ;
+VAL_ 689 EMG_BRAKE_2 0 "Disabled" 1 "Green enabled" 2 "Green blink (warning icon)" 3 "Yellow solid (warning icon)" ;
+VAL_ 689 LANE_ASSIST_2 0 "Disabled" 1 "Green enabled" 2 "Green blink (warning icon)" 3 "Yellow solid (warning icon)" ;
+VAL_ 689 BLIND_SPOT_2 0 "Disabled" 1 "Green enabled" 2 "Green blink (warning icon)" 3 "Yellow solid (warning icon)" ;
+VAL_ 689 TONES 0 "None" 1 "Constant beep" 2 "Quick beep" 3 "Triple fast beep" 4 "Fast single beep" 5 "Quad beep" 6 "Single beep" 7 "Double beep" ;
+VAL_ 849 KEY_PROMPT 0 "None" 1 "Brake + Push Start" 2 "No visible response (0x2)" 3 "Key ID Incorrect" 4 "Turn Steering Wheel + Push Button" 5 "Shift to Park" 6 "Power turned off to save battery" 7 "Key Battery Low" 8 "No key detected" 9 "Power will turn off to save battery" 10 "Push Ignition to OFF" 11 "Clutch + Push Start (shared firmware)" 12 "No visible response (0xC)" 13 "No visible response (0xD)" 14 "Touch Key to Start Button" 15 "Push Brake and Start Button to Drive" ;
+VAL_ 852 TCS_STATE 0 "None" 1 "TCS OFF solid + slip solid" 2 "TCS OFF solid" 3 "Slip blinking" 4 "Slip blinking" 5 "Slip solid" 6 "TCS OFF + slip blinking" 7 "TCS OFF + slip blinking" ;
+VAL_ 1057 GEAR 0 "None" 1 "P" 2 "R" 3 "N" 4 "D" 5 "D (S)" 6 "L" 8 "1" 9 "2" 10 "3" 11 "4" 12 "5" 13 "6" 16 "M1" 17 "M2" 18 "M3" 19 "M4" 20 "M5" 21 "M6" 22 "M7" 23 "M8" ;
+VAL_ 1355 AIR_DIRECTION 1 "Upper" 2 "Upper + Lower" 3 "Lower" 4 "Defogger + Lower" 5 "Defogger" ;
+VAL_ 1355 BLOWER_SPEED 3 "Level 1" 5 "Level 2" 7 "Level 3" 9 "Level 4" 11 "Level 5" 13 "Level 6" 15 "Level 7" ;
+VAL_ 1361 CRUISE_ICON 0 "None" 1 "Green up-arrow CC" 2 "White up-arrow CC" 3 "Green up-arrow blink / no speed" 4 "Green speed-set CC" 5 "White speed-set CC" 6 "Green speed-set blink / no speed" 9 "Green up-arrow, numeric speed blinking" 12 "Green speed-set, numeric speed blinking" ;
+VAL_ 1388 DRIVE_MODE 0 "Standard" 1 "Sport" 2 "Eco" 3 "Snow" 4 "Personal" 5 "Sport Plus" ;
+VAL_ 1549 CHIMES 0 "None" 1 "Headlight reminder" 16 "Door open chime" 18 "Single short high-pitch beep" 19 "Periodic quad beep" 21 "Startup beep" 24 "Long constant beep" 25 "Long constant beep (0x19)" ;
+VAL_ 1573 START_STATE 0 "Normal" 1 "? (1)" 2 "? (2)" 3 "Cranking" ;

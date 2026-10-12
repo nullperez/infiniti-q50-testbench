@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+firmware/esp32_bench/build/
+firmware/esp32_bench/sdkconfig*
+*.markers.jsonl
+Q50_Observed_Signals_and_Behaviors.md
+Q50_TestBench_Requirements.txt

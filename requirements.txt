@@ -1,0 +1,8 @@
+# Q50 TestBench - Python 3.10+ (developed on 3.14, Windows 11; Linux/Ubuntu supported)
+PySide6>=6.6
+python-can>=4.3
+canlib>=1.25          # Kvaser CANlib wrapper (needs Kvaser drivers / linuxcan on Linux)
+cantools>=39          # DBC loading for the Live Signal Tracker
+pyserial>=3.5         # ESP32 bench controller
+mcp==2.3.0            # MCP server for AI agents (pinned: API differs between major versions)
+anyio>=4

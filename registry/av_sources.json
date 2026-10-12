@@ -1,0 +1,29 @@
+{
+  "_comment": "Audio sources for the HU emulator. 'select' is the 0x61D '20 20 <select>' payload; record templates go to 0x628. Edit labels/codes freely; confidence reflects capture evidence (2026-09 car captures). 'extra' is an optional record sent after the main record (seen after USB/iPod selection).",
+  "sources": [
+    {"key": "FM", "label": "FM radio", "select": "02 01 00", "kind": "radio", "band": "01", "slot": "01",
+     "decimal": true, "default_freq": 100.3, "confidence": "probable",
+     "evidence": "cap2/button captures: 61D 20 20 02 01 00 then 628 20 0D band 01, PS name + radio text"},
+    {"key": "AM", "label": "AM radio", "select": "01 01 00", "kind": "radio", "band": "10", "slot": "02",
+     "decimal": false, "default_freq": 570, "confidence": "probable",
+     "evidence": "61D 20 20 01 01 00 then 628 20 0D band 10, freq 530/570 kHz"},
+    {"key": "SXM", "label": "SiriusXM", "select": "15 01 00", "kind": "radio", "band": "23", "slot": "07",
+     "decimal": false, "default_freq": 1, "confidence": "candidate",
+     "evidence": "61D 20 20 15 01 00 then 628 band 23, channel 1 'SiriusXM Preview'"},
+    {"key": "USB", "label": "USB (candidate)", "select": "53 FF FF", "kind": "media", "media_type": "03",
+     "extra": "2A 0D 00 12 2B 00 00", "confidence": "candidate",
+     "evidence": "61D 20 20 53 then 628 22 0D type 03 with title/album/artist + 2A record"},
+    {"key": "IPOD", "label": "iPod (candidate)", "select": "47 FF FF", "kind": "media", "media_type": "04",
+     "extra": "2A 0D 00 13 2C 00 00", "confidence": "candidate",
+     "evidence": "61D 20 20 47 then 628 22 0D type 04 (empty in captures) + 2A record"},
+    {"key": "BT", "label": "Bluetooth audio (candidate)", "select": "51 FF FF", "kind": "media", "media_type": "05",
+     "confidence": "candidate", "evidence": "61D 20 20 51 then 628 22 0D type 05"},
+    {"key": "SRC55", "label": "Source 0x55 (unknown)", "select": "55 FF FF", "kind": "media", "media_type": "06",
+     "confidence": "candidate", "evidence": "emulator test only"},
+    {"key": "SRC20", "label": "Source 0x20 (unknown)", "select": "20 FF 00", "kind": "extra_only",
+     "extra": "2A 0D 00 17 20 00 00", "confidence": "candidate",
+     "evidence": "61D 20 20 20 FF 00 followed only by 628 2A 0D 00 17 20 00 00"},
+    {"key": "AUX", "label": "AUX", "select": "32 FF FF", "kind": "aux", "record": "26 0D 00 00 02",
+     "confidence": "confirmed", "evidence": "handoff: 61D 20 20 32 FF FF + 628 26 0D 00 00 02 shows AUX"}
+  ]
+}
