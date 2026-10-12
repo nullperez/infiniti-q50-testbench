@@ -51,7 +51,7 @@ GEARS = {
     0b10101: "M6", 0b10110: "M7", 0b10111: "M8",
 }
 
-TCS_STATE = {0: "None", 1: "TCS OFF solid + slip solid", 2: "TCS OFF solid", 3: "Slip blinking",
+TCS_STATE = {0: "None", 1: "TCS OFF solid + slip solid", 2: "TCS OFF solid", 3: "Slip blinking (not seen on bench)",
              4: "Slip blinking", 5: "Slip solid", 6: "TCS OFF + slip blinking", 7: "TCS OFF + slip blinking"}
 
 CHIMES = {0b00000: "None", 0b00001: "Headlight reminder", 0b10000: "Door open chime",
@@ -86,13 +86,16 @@ def _messages() -> list[MessageDef]:
 
     m.append(MessageDef(0x160, "Accelerator Pedal", period_ms=10, signals=[
         bit("PEDAL_FULLY_PRESSED", 0, 6, confidence=CANDIDATE),
+        bit("ENGINE_STOPPED", 0, 3, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 1 off, 0 running with the engine, one change at start and stop)"),
+        bit("ENGINE_RUNNING", 6, 3, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 0 off, 1 running with the engine, one change at start and stop)"),
         byte_("ACCEL_POSITION", 3, factor=0.5, unit="%", maximum=100, minimum=0, label="Accelerator position"),
         byte_("ACCEL_POSITION_INV", 5, notes="0xFF - byte 3", control="readonly"),
     ]))
 
     m.append(MessageDef(0x180, "Engine RPM", period_ms=10, signals=[
         S("ENGINE_RPM", be16(0), factor=0.125, unit="rpm", minimum=0, maximum=8000, confidence=CONFIRMED,
-          label="Engine RPM", notes="raw = rpm * 8, big-endian (bench confirmed)"),
+          label="Engine RPM", notes="raw = rpm * 8, big-endian (bench confirmed). Setting it also sets the "
+          "other RPM copies (0x1F9, 0x3EC, 0x176); 0x3EC wins on the meter when present (bench 2026-10-12)."),
         byte_("ACCEL_POSITION", 5, factor=0.5, unit="%", minimum=0, maximum=100),
         field("COUNTER", 6, 3, 0, control="readonly",
               notes="README: byte 6 counter; only the low nibble rolls in captures (upper nibble kept)."),
@@ -100,7 +103,25 @@ def _messages() -> list[MessageDef]:
 
     m.append(MessageDef(0x182, "Engine 2", period_ms=10, signals=[
         field("COUNTER", 5, 3, 0, control="readonly"),
+        bit("ENGINE_STOPPED", 5, 5, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 1 off, 0 running with the engine, one change at start and stop)"),
         bit("BRAKE_PRESSED", 6, 6, label="Brake pressed"),
+    ]))
+
+    m.append(MessageDef(0x176, "Engine RPM (1 rpm/bit)", dlc=7, signals=[
+        S("ENGINE_RPM", be16(2), unit="rpm", minimum=0, maximum=8000, confidence=PROBABLE,
+          label="Engine RPM (0x176)", notes="tracks 0x180 through engine start in mainbus_startup; "
+          "changing it alone did not move the tach (bench 2026-10-12). Linked to 0x180."),
+    ]))
+
+    m.append(MessageDef(0x1F9, "Engine RPM copy", period_ms=10, signals=[
+        S("ENGINE_RPM", be16(2), factor=0.125, unit="rpm", minimum=0, maximum=8000, confidence=DOCUMENTED,
+          label="Engine RPM (0x1F9)", notes="same raw as 0x180 bytes 0-1 frame for frame in captures. Linked to 0x180."),
+    ]))
+
+    m.append(MessageDef(0x3EC, "Engine RPM (meter tach source)", dlc=2, period_ms=20, signals=[
+        S("ENGINE_RPM", be16(0), factor=0.125, unit="rpm", minimum=0, maximum=8000, confidence=CONFIRMED,
+          label="Engine RPM (0x3EC)", notes="raw = rpm * 8. Bench 2026-10-12: while 0x3EC is sent the tach follows "
+          "it, not 0x180; removing it leaves the tach at 0 until a B+ cycle. Linked to 0x180."),
     ]))
 
     m.append(MessageDef(0x1A5, "AWD", dlc=None, notes=(
@@ -124,6 +145,9 @@ def _messages() -> list[MessageDef]:
         bit("CRUISE_MASTER", 2, 1, confidence=PROBABLE, notes="correlates with cruise enabled on meter"),
         byte_("CRUISE_SWITCH", 3, confidence=CANDIDATE, notes="idle 0x20; 0x08/0x10 during SET-/RES+ presses"),
         field("COUNTER", 4, 1, 0, control="readonly"),
+        bit("IG_READY", 4, 6, confidence=CANDIDATE,
+            notes="follows the ignition, not the engine: on for the whole IG-on/engine-off capture "
+                  "(BENCHMETER_MAINBUS_STARTUP), cleared right after IG off; already set in remote-start captures"),
     ]))
 
     m.append(MessageDef(0x280, "Cluster Status 1 (meter)", sender="meter", period_ms=20, signals=[
@@ -209,12 +233,20 @@ def _messages() -> list[MessageDef]:
     m.append(MessageDef(0x354, "Chassis Control (ABS)", period_ms=40, signals=[
         S("VEHICLE_SPEED", be16(0), factor=0.01, unit="km/h", minimum=0, maximum=300, label="Vehicle speed"),
         field("TCS_STATE", 4, 7, 5, enum=TCS_STATE),
-        bit("ABS", 4, 4, notes="sequence dependent: see behaviour notes"),
-        bit("ABS_LATCH", 4, 3), bit("BRAKE", 4, 2), bit("BRAKE_LATCH", 4, 1),
+        bit("ABS", 4, 4, label="ABS hold", confidence=CONFIRMED,
+            notes="freezes the ABS lamp in its current state while set; never lights it by itself"),
+        bit("ABS_LATCH", 4, 3, label="ABS lamp", confidence=CONFIRMED,
+            notes="lights ABS while set (only when bit 4 is clear; with bit 4 set the lamp keeps its state)"),
+        bit("BRAKE", 4, 2, label="BRAKE hold", confidence=CONFIRMED,
+            notes="freezes the BRAKE lamp in its current state while set; never lights it by itself"),
+        bit("BRAKE_LATCH", 4, 1, label="BRAKE lamp", confidence=CONFIRMED,
+            notes="lights BRAKE while set (only when bit 2 is clear). BRAKE is shared with parking brake "
+                  "and low brake fluid inputs"),
         field("COUNTER", 5, 4, 3, control="readonly", notes="2-bit counter (00,08,10,18)"),
         bit("BRAKE_PRESSED", 6, 4),
-    ], notes="Byte 4: 0x10 from clear did not light ABS; 0x08 lit it; 0x18 then 0x10 kept it; "
-             "0x00 cleared. 0x04 lit BRAKE only after 0x02 had been applied."))
+    ], notes="Byte 4 (bench 2026-10-12): bits 3/1 request the ABS/BRAKE lamps, bits 4/2 hold each lamp in its "
+             "current state. 00 off, 0A both on, 1E stays on, 14 stays on (held), 00 off, 14 stays off, "
+             "1E stays off (held), 0A on. Names ABS/ABS_LATCH/BRAKE/BRAKE_LATCH kept for compatibility."))
 
     m.append(MessageDef(0x355, "Cluster Status 3 (meter)", sender="meter", period_ms=40, signals=[
         S("SPEED_PROCESSED", be16(0), factor=0.01, unit="km/h"),
@@ -226,7 +258,7 @@ def _messages() -> list[MessageDef]:
         bit("RIGHT_BLINKER_REQ", 2, 2, confidence=CANDIDATE, notes="no visible effect on the bench"),
         bit("LEFT_BLINKER_REQ", 2, 1, confidence=CANDIDATE, notes="no visible effect on the bench"),
         bit("TRUNK_OPEN", 2, 0),
-        bit("LOW_OIL_PRESSURE", 3, 5),
+        bit("LOW_OIL_PRESSURE", 3, 5, confidence=CONFIRMED, notes="lights red oil lamp + 'Low Oil Pressure / Stop Vehicle' (bench 2026-10-12, 3000 rpm); off at RPM 0"),
         bit("TPMS_LIGHT", 4, 7),
     ], notes="Missing 0x358 dims illumination and flashes the TPMS lamp."))
 
@@ -240,11 +272,16 @@ def _messages() -> list[MessageDef]:
                  byte_(f"{pos}_PRESSURE", b, factor=0.25, unit="psi", minimum=0, maximum=63.75),
                  bit(f"{pos}_VALID", 6, valid)]
     m.append(MessageDef(0x385, "TPMS", period_ms=100, signals=[
-        bit("PRESSURES_WHILE_DRIVING", 0, 1, notes="0 = 'tire pressures appear while driving'"),
+        bit("PRESSURES_WHILE_DRIVING", 0, 1, confidence=CONFIRMED,
+            notes="with every tire invalid: 0 shows 'Tire pressures appear while driving.', 1 shows dashes"),
         *tire,
-        field("TARGET_FRONT", 7, 7, 4, factor=10, offset=190, unit="kPa"),
-        field("TARGET_REAR", 7, 3, 0, factor=10, offset=190, unit="kPa"),
-    ], notes="Page inclusion, low/flat warning, pressure data and the TPMS telltale are separate mechanisms."))
+        field("TARGET_FRONT", 7, 7, 4, factor=10, offset=190, unit="kPa", confidence=CONFIRMED,
+              notes="kPa = 190 + 10 x nibble; nibble 0 hides the target (bench: 1 -> 29 psi, 15 -> 49 psi)"),
+        field("TARGET_REAR", 7, 3, 0, factor=10, offset=190, unit="kPa", confidence=CONFIRMED,
+              notes="kPa = 190 + 10 x nibble; nibble 0 hides the target (bench: 10 -> 42 psi)"),
+    ], notes="Page inclusion, low/flat warning, pressure data and the TPMS telltale are separate mechanisms. "
+             "Bench 2026-10-12: WARNING -> 'Tire Pressure Low / Add Air' popup + amber value; FLAT -> "
+             "'Flat Tire / Visit dealer' popup + red value and tire; VALID=0 -> '---'; pressure in psi (0.25 steps)."))
 
     m.append(MessageDef(0x3AF, "Hazard switch", dlc=1, period_ms=100, signals=[bit("HAZARD_BUTTON", 0, 7)]))
 
@@ -277,9 +314,22 @@ def _messages() -> list[MessageDef]:
         byte_("STATE", 0, confidence=CANDIDATE, notes="startup E0 -> 80 -> 00; switch sequences 14/06/04/16"),
     ], notes="Competing interpretations; kept as a raw experimental view."))
 
-    m.append(MessageDef(0x51B, "Service distance", dlc=None, signals=[
+    m.append(MessageDef(0x51B, "Service distance (wrong ID?)", dlc=None, signals=[
         S("SERVICE_DISTANCE", (Seg(4, 5, 0), Seg(5)), factor=5, unit="km", confidence=CANDIDATE,
-          notes="candidate: raw*5 km; captured message displayed 4060 mi"),
+          notes="candidate: raw*5 km; captured message displayed 4060 mi. Bench 2026-10-12: sending 0x51B "
+                "changed nothing; the same layout in 0x553 drives the Engine Oil page"),
+    ]))
+
+    m.append(MessageDef(0x5E4, "Power steering", dlc=3, period_ms=100, signals=[
+        bit("POWER_STEERING_WARNING", 0, 2, confidence=CONFIRMED, label="Power steering warning",
+            notes="red steering-wheel telltale (bench 2026-10-12, byte 0 = 0x04); part of the startup lamp check"),
+    ]))
+
+    m.append(MessageDef(0x553, "Oil service", dlc=6, period_ms=100, signals=[
+        S("SERVICE_DISTANCE", (Seg(4, 5, 0), Seg(5)), factor=5, unit="km", minimum=0, maximum=81915,
+          confidence=CONFIRMED, label="Service due in",
+          notes="Engine Oil page 'Service due in': raw*5 km (bench 2026-10-12: 0x0535 -> 4141 mi, "
+                "0x0100 -> 795 mi, 0x0010 -> 49 mi). Byte 4 bits 7:6 not exercised."),
     ]))
 
     m.append(MessageDef(0x51C, "Page-slot prerequisite A", period_ms=500, notes=(
@@ -311,14 +361,20 @@ def _messages() -> list[MessageDef]:
         byte_("FUEL_USAGE_COUNTER", 1, notes="cumulative fuel use; omitting 0x551 while moving spikes economy"),
         bit("MIL_SOLID", 3, 5, label="Check engine (solid)"),
         bit("MIL_FLASH", 3, 6, label="Check engine (flashing)"),
+        bit("IG_READY", 3, 7, confidence=PROBABLE,
+            notes="ignition on/ready, not engine running: set the whole IG-on/engine-off capture "
+                  "(BENCHMETER_MAINBUS_STARTUP, RPM 0 for 60 s); cleared 0.1 s after IG off (engineonq50)"),
         byte_("CRUISE_SET_SPEED", 4, unit="mph", label="Cruise set speed", notes="0x33 displayed 51 mph"),
         field("CRUISE_ICON", 5, 7, 4, enum=CRUISE_ICON_551, label="Cruise icon",
               notes="upper-nibble whole-byte masks; interaction with 0x2B1 not isolated"),
     ]))
 
     m.append(MessageDef(0x56C, "Chassis control / drive mode", dlc=6, period_ms=100, signals=[
-        bit("TRACE_BLUE_SQUARES", 0, 6), bit("TRACE_2_SQUARES_WHEELS", 0, 5),
-        bit("TRACE_BLUE_LINES_WHEELS", 0, 4),
+        bit("TRACE_BLUE_SQUARES", 0, 6),
+        field("TRACE_SQUARE_LINES", 0, 5, 4, enum={0: "None", 1: "1 line", 2: "2 lines", 3: "3 lines"},
+              confidence=CONFIRMED, label="Trace: lines of blue squares",
+              notes="number of blue-square lines beside the car (bench 2026-10-12: 10 -> 1, 20 -> 2, 30 -> 3); "
+                    "formerly two flags TRACE_BLUE_LINES_WHEELS (bit 4) and TRACE_2_SQUARES_WHEELS (bit 5)"),
         bit("CHASSIS_ERROR", 0, 1, confidence=CANDIDATE, notes="mask 0x02 associated with chassis-system error"),
         bit("TRACE_SADDLE_CURVE", 1, 6),
         field("DRIVE_MODE", 1, 5, 3, enum=DRIVE_MODES, label="Drive mode"),
@@ -335,11 +391,14 @@ def _messages() -> list[MessageDef]:
 
     m.append(MessageDef(0x580, "Engine 3", period_ms=100, signals=[
         S("ENGINE_TORQUE", be16(0), factor=1 / 16, unit="Nm"),
-        bit("LOW_OIL_PRESSURE", 2, 0, label="Low oil pressure"),
+        bit("LOW_OIL_PRESSURE", 2, 0, label="Low oil pressure",
+            notes="owner: lights the oil warning while RPM > 0 and goes off at RPM 0 (one camera test at "
+                  "3000 rpm on 2026-10-12 did not catch it)"),
         bit("LOOSE_FUEL_CAP", 3, 0),
         byte_("OIL_TEMP", 4, offset=-40, unit="degC", confidence=CANDIDATE,
               notes="README 'raw degC + 40' is ambiguous (+40 vs -40)"),
         bit("ECO_LIGHT", 5, 6, label="ECO telltale"),
+        bit("ENGINE_RUNNING", 7, 5, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 0 off, 1 running with the engine, one change at start and stop)"),
     ]))
 
     m.append(MessageDef(0x5C5, "Cluster Status 4 (meter)", sender="meter", period_ms=100, signals=[
@@ -370,12 +429,109 @@ def _messages() -> list[MessageDef]:
     m.append(MessageDef(0x2AB, "Unresolved 0x2AB", signals=[
         S("WHEEL_ANGLE_CAND", be16(2), confidence=CANDIDATE, notes="suggested wheel angle")]))
     m.append(MessageDef(0x300, "Unresolved 0x300", dlc=1, signals=[
-        byte_("STEER_EFFORT_CAND", 0, confidence=CANDIDATE, notes="suggested steering effort, uncalibrated")]))
+        byte_("STEER_EFFORT_CAND", 0, confidence=CANDIDATE, notes="suggested steering effort, uncalibrated"),
+        bit("ENGINE_RUNNING", 0, 1, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 0 off, 1 running with the engine, one change at start and stop)"),
+    ]))
     return m
 
 
+# Engine on/off: every flag that follows the engine in the engineonq50 capture, with its value
+# while the engine is off (the idle profile was captured running, so "running" = clear overrides).
+# Checked against every real-car capture: these five hold their engine-off value with IG on and the
+# engine stopped (BENCHMETER_MAINBUS_STARTUP: 60 s IG on, RPM 0) and flip only when the engine runs.
+# 0x551 B3.7 and 0x239 B4.6 follow the ignition instead (IG_READY) and are left alone.
+ENGINE_OFF_STATE = {
+    "main.160.ENGINE_STOPPED": 1, "main.160.ENGINE_RUNNING": 0, "main.182.ENGINE_STOPPED": 1,
+    "main.300.ENGINE_RUNNING": 0, "main.580.ENGINE_RUNNING": 0, "main.180.ENGINE_RPM": 0,
+}
+
+# Signals that carry the same physical value in several messages. Setting or clearing
+# the first one does the same to the others (in physical units).
+LINKED_SIGNALS = {
+    "main.180.ENGINE_RPM": ("main.1F9.ENGINE_RPM", "main.3EC.ENGINE_RPM", "main.176.ENGINE_RPM"),
+    # the speedometer and the fuel-economy calculation use the 0x284/0x285 wheel speeds
+    "main.354.VEHICLE_SPEED": ("main.284.VEHICLE_SPEED", "main.284.FR_WHEEL_SPEED", "main.284.FL_WHEEL_SPEED",
+                               "main.285.RR_WHEEL_SPEED", "main.285.RL_WHEEL_SPEED"),
+}
+
+
+# Bench results 2026-10-12 (camera on the real meter), applied on top of the definitions above:
+# path -> (note appended, new confidence or None to keep it).
+NO_EFFECT = "no visible change on the bench 2026-10-12"
+BENCH_2026_10_12 = {
+    "main.351.KEY_PROMPT": ("all 15 codes shown as listed; 2/12/13 show nothing; 15 also turns the gauge "
+                            "backlight off", CONFIRMED),
+    "main.351.STEERING_LOCK_REG_COMPLETE": ("'Steering Lock Registration Complete'", CONFIRMED),
+    "main.351.KEY_SYSTEM_ERROR": ("'Key System Error / See Owner's Manual'", CONFIRMED),
+    "main.351.AUTO_HIGH_BEAM": ("green auto-high-beam telltale", CONFIRMED),
+    "main.351.LOCK": (NO_EFFECT, None), "main.351.UNLOCK": (NO_EFFECT, None),
+    "main.56E.LOCK_CMD": (NO_EFFECT, None), "main.56E.UNLOCK_CMD": (NO_EFFECT, None),
+    "main.56E.UNKNOWN_B0_7": (NO_EFFECT, None), "main.56E.UNKNOWN_B0_6": (NO_EFFECT, None),
+    "main.354.TCS_STATE": ("1, 2, 4-7 as listed (4: slip blinks; 6/7: TCS OFF solid + slip blinks); "
+                           "3 showed nothing", CONFIRMED),
+    "main.421.GEAR": ("every listed code shown (N boxed, Ds, L, 1-6, M1-M8 as nM)", CONFIRMED),
+    "main.421.FLASH_GEAR": ("gear digit blinks", CONFIRMED),
+    "main.421.AT_ERROR_A": ("'AT Error' like AT_ERROR_B, but only while RPM > 0 (owner)", CONFIRMED),
+    "main.421.AT_ERROR_B": ("'AT Error / See Owner's Manual' + master warning; needs RPM > 0 (owner)", CONFIRMED),
+    "main.56C.DRIVE_MODE": ("all six modes shown (ECO green, SPORT/SPORT+ red)", CONFIRMED),
+    "main.56C.CHASSIS_ERROR": ("'Chassis Control System Error'; clears when the bit clears", CONFIRMED),
+    "main.56C.TRACE_BLUE_SQUARES": ("Chassis Control page grid graphic", CONFIRMED),
+    "main.56C.TRACE_SADDLE_CURVE": ("Chassis Control page grid graphic", CONFIRMED),
+    "main.56C.FL_WHEEL_HIGHLIGHT": ("wheel highlighted on Chassis Control page", CONFIRMED),
+    "main.56C.FR_WHEEL_HIGHLIGHT": ("wheel highlighted on Chassis Control page", CONFIRMED),
+    "main.56C.RL_WHEEL_HIGHLIGHT": ("wheel highlighted on Chassis Control page", CONFIRMED),
+    "main.56C.RR_WHEEL_HIGHLIGHT": ("wheel highlighted on Chassis Control page", CONFIRMED),
+    "main.551.MIL_FLASH": ("MIL blinks", CONFIRMED),
+    "main.551.CRUISE_ICON": ("1-6, 9, 12 shown as listed with CRUISE_SET_SPEED", CONFIRMED),
+    "main.358.TRUNK_OPEN": ("Warning + trunk shown open", CONFIRMED),
+    "main.358.DIM_BACKLIGHT": ("whole meter dims", CONFIRMED),
+    "main.358.LEFT_BLINKER_REQ": (NO_EFFECT, None), "main.358.RIGHT_BLINKER_REQ": (NO_EFFECT, None),
+    "main.2B1.CAR_AHEAD": ("2 orange car bar; 3 red crash-alert banner", CONFIRMED),
+    "main.2B1.CRUISE_CONTROL": ("3 turns the cruise icon orange", CONFIRMED),
+    "main.2B1.EMG_BRAKE": ("1 white, 2 warning triangle on Driving Aids page, 3 orange, 0 hidden", CONFIRMED),
+    "main.2B1.LANE_ASSIST": ("1 white, 2 warning triangle on Driving Aids page, 3 orange, 0 hidden", CONFIRMED),
+    "main.2B1.BLIND_SPOT": ("2 warning triangle on Driving Aids page, 3 orange rear zones", CONFIRMED),
+    "main.2B1.EMG_BRAKE_2": ("1/2 green, 3 orange, 0 hidden", CONFIRMED),
+    "main.2B1.LANE_ASSIST_2": ("1/2 green, 3 orange, 0 hidden", CONFIRMED),
+    "main.2B1.BLIND_SPOT_2": ("shown in the top bar", None),
+    "main.2B1.EMERGENCY_BRAKE_WARNING": ("orange forward zone on Driving Aids page, blinking arc in top bar", CONFIRMED),
+    "main.2B1.LANE_WARN_LEFT": ("lane icon blinks orange (side not distinguishable on camera)", None),
+    "main.2B1.LANE_WARN_RIGHT": ("lane icon blinks orange (side not distinguishable on camera)", None),
+    "main.2B1.BSW_RIGHT_BLINK": ("orange marks blink at the rear of the car icon", None),
+    "main.2B1.WINDING_ROAD": ("shown only while CAR_AHEAD is 1 (white) or 2 (yellow) (owner, bench)", CONFIRMED),
+    "main.2B1.PROMPT_PAGE": ("shows the Driving Aids page, which reverts after a few seconds", CONFIRMED),
+    "main.2B1.CC_BIT4": (NO_EFFECT, None),
+    "main.284.FR_WHEEL_SPEED": ("48.28 km/h commanded (raw 9656, 0.005 km/h/bit) -> needle just over 30 mph, "
+                                "meter 0x355 reports 50.07 km/h; 0.01 km/h/bit would be 60 mph", CONFIRMED),
+    "main.551.FUEL_USAGE_COUNTER": ("instantaneous MPG = 13.1 x mph / counts per s: 30 mph at 19.65 and "
+                                    "9.83 counts/s showed 20 and 40 mpg (q50tb/sim/fuel_economy.py)", CONFIRMED),
+    "main.35D.UNKNOWN_B4_6": (NO_EFFECT, None),
+    "main.216.WIPER_STATE": (NO_EFFECT, None), "main.216.OP_STATE": (NO_EFFECT, None),
+    "main.216.HEADLIGHTS": ("no telltale (lamps follow 0x60D)", None), "main.216.FOG_LIGHTS": ("no telltale (lamps follow 0x60D)", None),
+    "main.625.START_STATE": ("1 and 2: no visible change", None),
+    "main.160.PEDAL_FULLY_PRESSED": (NO_EFFECT, None),
+    "main.580.OIL_TEMP": (NO_EFFECT + " (150 degC)", None),
+    "main.002.STEERING_ANGLE": ("Chassis Control page does not move with +-180 deg", None),
+    "main.519.STATE": (NO_EFFECT + " (0xFF)", None),
+}
+
+
+def _apply_bench_notes(db: SignalDatabase) -> None:
+    for path, (note, conf) in BENCH_2026_10_12.items():
+        try:
+            s = db.signal(path)
+        except (KeyError, ValueError):
+            continue
+        if note:
+            s.notes = (s.notes + "; " if s.notes else "") + "bench 2026-10-12: " + note
+        if conf:
+            s.confidence = conf
+
+
 def build_database() -> SignalDatabase:
-    return SignalDatabase(_messages())
+    db = SignalDatabase(_messages(), links=LINKED_SIGNALS)
+    _apply_bench_notes(db)
+    return db
 
 
 # Meter-originated IDs: never transmitted by the bench (handoff rule 2).

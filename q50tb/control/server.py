@@ -109,24 +109,38 @@ class ControlClient:
             self._sock.close()
             self._sock = None
 
+    def _exchange(self, data: bytes) -> bytes:
+        try:
+            self._file.write(data)
+            self._file.flush()
+            line = self._file.readline()
+        except OSError as exc:
+            self.close()
+            raise ConnectionError(str(exc)) from exc
+        if not line:
+            self.close()
+            raise ConnectionError("control server closed the connection")
+        return line
+
     def call(self, method: str, params: Optional[dict] = None):
         with self._lock:
-            if self._sock is None:
+            reused = self._sock is not None
+            if not reused:
                 self.connect()
             self._id += 1
             req = {"id": self._id, "method": method, "params": params or {}}
             if self.token:
                 req["token"] = self.token
+            data = (json.dumps(req) + "\n").encode()
             try:
-                self._file.write((json.dumps(req) + "\n").encode())
-                self._file.flush()
-                line = self._file.readline()
-            except OSError:
-                self.close()
-                raise
-            if not line:
-                self.close()
-                raise ConnectionError("control server closed the connection")
+                line = self._exchange(data)
+            except ConnectionError:
+                if not reused:
+                    raise
+                # A socket kept from before an app restart is dead and the request never
+                # reached the new server, so one retry on a fresh connection is safe.
+                self.connect()
+                line = self._exchange(data)
             resp = json.loads(line)
             if "error" in resp:
                 raise ApiError(resp["error"].get("message", "error"))

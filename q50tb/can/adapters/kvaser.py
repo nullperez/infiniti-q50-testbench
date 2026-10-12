@@ -7,6 +7,8 @@ the open fails with ListenOnlyUnsupported (virtual channels excepted).
 
 from __future__ import annotations
 
+import ctypes.util
+import sys
 from typing import Optional
 
 from q50tb.can.adapters.base import (Adapter, AdapterError, AdapterInfo, BusConfig,
@@ -14,11 +16,17 @@ from q50tb.can.adapters.base import (Adapter, AdapterError, AdapterInfo, BusConf
 from q50tb.can.frame import CanFrame, RX
 from q50tb.core import timebase
 
-try:
-    from canlib import canlib, Frame as KvFrame
-except Exception:  # canlib or the Kvaser driver is missing
-    canlib = None
-    KvFrame = None
+canlib = None
+KvFrame = None
+# On Linux the Kvaser library comes from linuxcan; without it, Kvaser devices
+# appear as SocketCAN links (kernel kvaser_usb driver) instead.
+if not sys.platform.startswith("linux") or ctypes.util.find_library("canlib"):
+    try:
+        from canlib import canlib, Frame as KvFrame
+    except (Exception, SystemExit):  # canlib or the Kvaser driver is missing
+        # canlib's dllLoader calls exit(1) when libcanlib.so / canlib32.dll is absent
+        canlib = None
+        KvFrame = None
 
 
 def available() -> bool:

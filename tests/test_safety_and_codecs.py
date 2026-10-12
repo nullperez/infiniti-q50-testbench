@@ -159,3 +159,119 @@ if __name__ == "__main__":
         if name.startswith("test_"):
             fn()
             print("ok", name)
+
+
+def test_rpm_mirrors_to_every_rpm_message():
+    """The meter's tach follows 0x3EC when present, so ENGINE_RPM must reach every copy."""
+    from q50tb.core.scheduler import Scheduler
+    from q50tb.sim.background import BackgroundManager
+    from q50tb.signals.q50_main import build_database
+
+    db = build_database()
+    bg = BackgroundManager(BusManager(), Scheduler(), db)
+    bg.load_profile(os.path.join(ROOT, "profiles", "main_idle_baseline.json"))
+    payload = lambda cid: bg.get("main", cid).next_payload(db)  # noqa: E731
+
+    bg.set_signal("main", 0x180, "ENGINE_RPM", 3000)
+    assert payload(0x180)[0:2] == bytes.fromhex("5DC0")
+    assert payload(0x1F9)[2:4] == bytes.fromhex("5DC0")
+    assert payload(0x3EC)[0:2] == bytes.fromhex("5DC0")
+    assert payload(0x176)[2:4] == (3000).to_bytes(2, "big")
+
+    bg.clear_signal("main", 0x180, "ENGINE_RPM")
+    for cid in (0x1F9, 0x3EC, 0x176):
+        assert not bg.get("main", cid).overlays
+
+
+def test_media_status_record_only_without_metadata():
+    """The 2A status record overlays a message ('not connected'), so it must not follow real metadata."""
+    from q50tb.av.services.audio import AudioState, build_records, load_sources
+
+    usb = {s.key: s for s in load_sources()}["USB"]
+    with_meta = build_records(usb, AudioState(title="T", artist="A"))
+    assert len(with_meta) == 1 and with_meta[0][0] == 0x22
+    without = build_records(usb, AudioState(playing=False))
+    assert [r[0] for r in without] == [0x22, 0x2A]
+
+
+def test_clock_announces_12_24h_change():
+    """The meter only switches 12/24 h after a record with mode bit1 clear (01/00)."""
+    from q50tb.av.services.clock import ClockService
+
+    class Host:
+        sent = []
+        def send(self, ch, rec, **kw):
+            self.sent.append(rec)
+
+    clk = ClockService(Host())
+    clk.state.hour24 = True
+    clk.send_now()
+    assert [r[2] for r in Host.sent] == [0x01, 0x03]
+    Host.sent.clear()
+    clk.send_now()
+    assert [r[2] for r in Host.sent] == [0x03]
+
+
+def test_media_sources_cover_every_media_type():
+    """Each media type the meter labels (bench 2026-10-12) has a selectable source."""
+    from q50tb.av.services.audio import load_sources
+
+    types = {s.key: s.media_type for s in load_sources() if s.kind == "media"}
+    assert types == {"CD": 1, "MUSICBOX": 2, "IPOD": 3, "USB": 4, "BT": 5, "DVD": 6, "IAS": 7, "DISC": 8}
+
+
+def test_bench_notes_point_at_real_signals():
+    """build_database() skips unknown paths, so a typo in the bench table would vanish silently."""
+    from q50tb.signals.q50_main import BENCH_2026_10_12, build_database
+
+    db = build_database()
+    for path in BENCH_2026_10_12:
+        assert "bench 2026-10-12" in db.signal(path).notes, path
+
+
+def test_engine_off_sets_stopped_flags_and_back():
+    """Engine off = the ECU flags seen with IG on / engine stopped; running = captured idle again."""
+    s = AppSettings()
+    ctx = AppContext(s)
+    try:
+        bg = ctx.background
+        payload = lambda cid: bg.get("main", cid).next_payload(ctx.db)  # noqa: E731
+        assert ctx.engine_running()
+        idle = {cid: payload(cid) for cid in (0x160, 0x182, 0x300, 0x580, 0x551)}
+        ctx.set_engine_running(False)
+        assert not ctx.engine_running()
+        assert payload(0x160)[0] & 0x08 and not payload(0x160)[6] & 0x08
+        assert payload(0x182)[5] & 0x20 and not payload(0x300)[0] & 0x02 and not payload(0x580)[7] & 0x20
+        assert payload(0x180)[0:2] == bytes(2) and payload(0x3EC)[0:2] == bytes(2)
+        assert payload(0x551)[3] == idle[0x551][3]          # ignition-ready bit untouched
+        ctx.set_engine_running(True)
+        assert ctx.engine_running()
+        for cid, byte, mask in ((0x160, 0, 0x08), (0x160, 6, 0x08), (0x182, 5, 0x20), (0x300, 0, 0x02), (0x580, 7, 0x20)):
+            assert payload(cid)[byte] & mask == idle[cid][byte] & mask
+    finally:
+        ctx.shutdown()
+
+
+def test_fuel_economy_counter_rate():
+    """0x551 byte 1 must advance at 13.1 * mph / mpg counts per second (CANSim bench fit)."""
+    from q50tb.sim import fuel_economy as fe
+
+    assert abs(fe.counts_per_second(60, 30, 0.3) - 26.2) < 1e-9
+    assert abs(fe.counts_per_second(0, 30, 0.3) - 0.3 * fe.COUNTS_PER_GALLON / 3600) < 1e-9   # stopped: idle flow
+    ctx = AppContext(AppSettings())
+    try:
+        ctx.background.set_signal("main", 0x284, "FR_WHEEL_SPEED", 60 * fe.KMH_PER_MPH)
+        sim = fe.FuelEconomySim(ctx.background, ctx.scheduler)   # driven by hand, no scheduler job
+        sim.set(target_mpg=30)
+        sim._total, sim._last_t = 0.0, fe.timebase.now() - 0.4  # 0.4 s since the last tick
+        sim._tick()
+        assert abs(sim._total - 26.2 * 0.4) < 0.2
+        assert "FUEL_USAGE_COUNTER" in ctx.background.get("main", 0x551).overlays
+        sim = ctx.fuel
+        sim.set(enabled=True, target_mpg=30)
+        ctx.set_engine_running(False)
+        assert sim.rate() == 0.0                # no fuel use with the engine off
+        sim.set(enabled=False)
+        assert "FUEL_USAGE_COUNTER" not in ctx.background.get("main", 0x551).overlays
+    finally:
+        ctx.shutdown()

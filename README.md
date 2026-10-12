@@ -11,7 +11,9 @@ run.bat            (Windows)       bash run.sh        (Linux)
 ```
 Both create `.venv` and install `requirements.txt` on first run, then start `python -m q50tb`.
 
-Linux notes: Kvaser needs the `linuxcan` driver; SocketCAN links are configured with
+Linux notes: Kvaser USB adapters work out of the box through SocketCAN (the kernel's `kvaser_usb` driver
+shows each channel as `can0`, `can1`, …); Kvaser's own `linuxcan`/CANlib is optional. SocketCAN links are
+configured with
 `ip link set can0 type can bitrate 500000 [listen-only on]` (or let the app do it via Settings →
 "Let the app configure SocketCAN links", which uses sudo/pkexec).
 
@@ -34,19 +36,19 @@ Linux notes: Kvaser needs the `linuxcan` driver; SocketCAN links are configured 
 |---|---|
 | Controls | Every documented signal: RPM/speed sliders, coolant, gear radio buttons, doors laid out like the car, lights (with blinking turn signals), warnings incl. the ABS/BRAKE sequences, key prompts, TPMS per tire, ADAS/cruise, chassis/steering, HVAC, and an auto-generated **All signals** tab. Hover any control for bit position, confidence and notes. |
 | AV Controls | Master switch for head-unit emulation, AV adapter selector, channel states, page enable/disable, preferences (display effect, outside-temp alert, language, pressure unit, factory reset), audio sources with per-source metadata, clock (PC time / set time / 12-24 h), driver break alert, navigation instructions and a route simulator. |
-| Hardware | ESP32: B+/IG/ACC, latched inputs, momentary buttons, meter power cycle, device log. |
+| Hardware | ESP32: B+, IG (+ACC, tied to IG on the bench), latched inputs, momentary buttons, meter power cycle, device log. |
 | CAN Send | Classic/FD frames (FD only on an FD bus), periodic queue, rolling counter, checksum, byte sweeps (walking bit / counter / custom, dwell, loop), save/load queue. |
 | Raw Log | Live table with pause, clear, export (CSV/pcapng/candump), ID filter (`359, 300`, prefix `35`, exclude `-6A8`), direction and bus filters, recording to pcapng with markers. |
 | Background Messages | The periodic traffic of a real idling car (learned from `idle.pcapng`): enable/disable (all on by default), period, per-byte overrides that keep counters/checksums running, load/save profiles, learn a profile from any capture. |
 | Replay | Two tracks (e.g. main + AV capture) started together on two buses, per-track excluded IDs, time window, 100-frame preview with excluded frames greyed out, speed and loop. |
 | Dashboard | Virtual cluster: tach, speed, coolant, fuel, gear, drive mode, key prompt, cruise/ADAS, doors, TPMS, steering wheel, telltales, AV nav/audio/clock. Grey = no data/stale (never a fake zero). |
-| Message Tracker | Watched IDs with per-byte colours (grey waiting, green unchanged, orange changed last frame, yellow changed since reset, slate-blue stale). |
+| Message Tracker | Watched IDs with per-byte colours (grey waiting, green unchanged, yellow changed last frame, orange changed since reset, slate-blue stale). |
 | Signal Tracker | Upload a `.dbc` (or use the built-in database) and watch decoded values; trend plot; export the built-in database as `q50_main.dbc`. |
 | AV Debug | Reassembled AV transactions with decoding (works in monitor mode), record composer with templates, raw frame injector, link timing, channel configuration, paste-and-decode. |
 
 ## AV head unit in 60 seconds
 
-1. Power the meter including **ACC** (M57 pin 14) and start the bus with both main and AV adapters.
+1. Power the meter including **ACC** (M57 pin 14; tied to IG on the bench, so IG on is enough) and start the bus with both main and AV adapters.
 2. Keep background messages running (0x51C + 0x4F6 make AV page slots exist; 0x385 for TPMS).
 3. AV Controls → tick **ENABLE AV CONTROLS**. Channels go `waiting → announced → negotiating → ready`
    when the meter announces; the meter re-announces until answered. If a channel stays `waiting`,
@@ -58,10 +60,11 @@ Protocol details and evidence: [docs/AV_PROTOCOL.md](docs/AV_PROTOCOL.md).
 ## ESP32 firmware
 
 `firmware/esp32_bench/` is ESP-IDF firmware speaking the same line protocol as the original esp32-bench
-(PING/LIST/STATUS/SET/PRESS/ALLOFF, `EVT` lines) plus an **ACC** channel. **Set the GPIO table in
-`main/bench_main.c` to your wiring before flashing** — connect the old firmware first and read the pins
-from the Hardware page (LIST). ACC needs its own high-side relay. Build: `idf.py set-target esp32 build flash`.
-The client is `q50tb/hw/esp32_bench.py` (your original API, extended); older firmware without ACC still works.
+(PING/LIST/STATUS/SET/PRESS/ALLOFF, `EVT` lines) plus an optional **ACC** channel. The GPIO table in
+`main/bench_main.c` matches the bench wiring (copied from the old firmware's LIST); check it against LIST before
+flashing another board. On the bench ACC is tied to IG, so ACC stays unwired and the bench keeps running the old
+firmware, which works as is. Build: `idf.py set-target esp32 build flash`.
+The client is `q50tb/hw/esp32_bench.py` (your original API, extended).
 
 ## AI agents (MCP)
 
@@ -69,8 +72,8 @@ The GUI runs a local JSON-RPC control server (127.0.0.1:8765). The MCP server ex
 `q50tb/control/api.py` as a tool (61 today: buses, signals, dashboard, background, send queue, log, tracker,
 record/replay, AV head unit, ESP32).
 
-* Claude Code in this folder picks up `.mcp.json` automatically (Windows path; on Linux change the command
-  to `.venv/bin/python`).
+* Claude Code in this folder picks up `.mcp.json` automatically (Linux path; on Windows change the command
+  to `.venv/Scripts/python.exe`).
 * Other clients: `"command": "<repo>/.venv/Scripts/python", "args": ["-m", "q50tb.control.mcp_server"]`.
 * `--headless` runs the bench without the GUI.
 

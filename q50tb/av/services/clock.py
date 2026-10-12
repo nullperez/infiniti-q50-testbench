@@ -2,7 +2,8 @@
 
 0x603 (meter channel): ``40 0D <mode> <HH> <MM>`` - once a minute and on change.
   mode bit0 = 24-hour display (03 seen after the owner set 24 h, 02 at 9:25 AM),
-  bit1 = unknown flag normally set (01 seen right after a clock change).
+  bit1 = normally set; clear it (01) to announce a 12/24 h change. Bench 2026-10-12: 02 -> 03 alone
+  left the meter in 12 h; 01 then 03 switched it to 24 h.
   Hours below 10 use a blank tens digit: 9 -> F9 (seen in 12 h mode).
 0x61D (car peer channel): ``24 4D <YYYY> <MM> <DD> <hh> <mm> <ss> <dow>`` packed BCD,
   once a second; dow 0=Sunday (Fri=05, Tue=02, Wed=03 in captures).
@@ -35,6 +36,7 @@ class ClockService:
         self.state = ClockState()
         self._job: Optional[Job] = None
         self._last_minute: Optional[tuple] = None
+        self._sent_hour24: Optional[bool] = None   # mode the meter was last given (None = not yet)
 
     def now(self) -> dt.datetime:
         return dt.datetime.now() + self.state.offset
@@ -49,11 +51,11 @@ class ClockService:
         self.state.use_pc_time = True
         self.send_now()
 
-    def clock_record(self, t: Optional[dt.datetime] = None) -> bytes:
+    def clock_record(self, t: Optional[dt.datetime] = None, announce: bool = False) -> bytes:
         """The hour is always the 24 h value (car: 00:29 -> F0, 09:25 -> F9 in 12 h
         mode); the mode bit tells the meter how to display it."""
         t = t or self.now()
-        mode = (0x01 if self.state.hour24 else 0x00) | (0x02 if self.state.flag_bit1 else 0x00)
+        mode = (0x01 if self.state.hour24 else 0x00) | (0x02 if self.state.flag_bit1 and not announce else 0x00)
         hh = bcd_blank_tens(t.hour) if self.state.blank_tens else bcd(t.hour)
         return bytes([0x40, 0x0D, mode, hh, bcd(t.minute)])
 
@@ -63,8 +65,14 @@ class ClockService:
         return bytes([0x24, 0x4D, bcd(t.year // 100), bcd(t.year % 100), bcd(t.month), bcd(t.day),
                       bcd(t.hour), bcd(t.minute), bcd(t.second), dow])
 
+    def _send_clock(self, t: Optional[dt.datetime], label: str) -> None:
+        if self.state.hour24 != self._sent_hour24:
+            self.host.send("status", self.clock_record(t, announce=True), label="clock (12/24 h change)")
+            self._sent_hour24 = self.state.hour24
+        self.host.send("status", self.clock_record(t), label=label)
+
     def send_now(self) -> None:
-        self.host.send("status", self.clock_record(), label="clock")
+        self._send_clock(None, "clock")
         if self.state.send_datetime_61d:
             self.host.send("source", self.datetime_record(), label="date/time",
                            expect_ack=self.host.channel_has_peer("source"))
@@ -73,6 +81,7 @@ class ClockService:
 
     def start(self) -> None:
         self.stop()
+        self._sent_hour24 = None     # new session: announce the mode again
         self._job = self.host.scheduler.every(1.0, self._tick, name="av-clock")
 
     def stop(self) -> None:
@@ -89,4 +98,4 @@ class ClockService:
                            expect_ack=self.host.channel_has_peer("source"))
         if self.state.auto_send and self.host.channel_ready("status") and (t.hour, t.minute) != self._last_minute:
             self._last_minute = (t.hour, t.minute)
-            self.host.send("status", self.clock_record(t), label="clock (minute)")
+            self._send_clock(t, "clock (minute)")

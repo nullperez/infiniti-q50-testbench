@@ -185,6 +185,10 @@ class LinkConfig:
     blind_without_fc: bool = False            # send CFs even if no FC arrives
     fc_st_min: int = 0x0A                     # what we advertise in our FC
     ack_delay: float = 0.0
+    # Minimum time between our last frame and the first frame of the next record. The meter
+    # drops an ACK that is followed by another frame within ~0.3 ms and then re-sends its
+    # reply ~515 ms later (bench 2026-10-12); the real HU never sends that fast.
+    min_record_gap: float = 0.01
 
 
 class AvLink:
@@ -213,6 +217,8 @@ class AvLink:
         self._pending_frames: list[bytes] = []
         self._state = "idle"     # idle | wait_fc | sending_cf | wait_ack
         self._timer: Optional[Job] = None
+        self._last_tx = 0.0
+        self._gap_pending = False
         self.peer_last_seen: Optional[float] = None
         self.peer_heartbeat: bytes = b""
         self.stats = {"tx_msgs": 0, "rx_msgs": 0, "timeouts": 0, "retries": 0, "failed": 0}
@@ -295,7 +301,12 @@ class AvLink:
         return self._token_hi
 
     def _next_record(self) -> None:
-        if self._current is not None or not self._queue:
+        if self._current is not None or not self._queue or self._gap_pending:
+            return
+        wait = self.config.min_record_gap - (timebase.now() - self._last_tx)
+        if wait > 0:
+            self._gap_pending = True
+            self._sched.after(wait, self._gap_elapsed)
             return
         self._current = self._queue.popleft()
         self._frags = split_fragments(self._current.data)
@@ -435,7 +446,13 @@ class AvLink:
             self._timer.cancel()
             self._timer = None
 
+    def _gap_elapsed(self) -> None:
+        with self._lock:
+            self._gap_pending = False
+            self._next_record()
+
     def _raw(self, frame: bytes, kind: str) -> None:
+        self._last_tx = timebase.now()
         ok = self._send_frame(self.hu_id, pad8(frame))
         if not ok and kind not in ("HB",):
             self._emit("tx-refused", kind=kind)

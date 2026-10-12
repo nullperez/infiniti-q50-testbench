@@ -122,12 +122,12 @@ class BenchAPI:
         """Quick-start guide for agents: what this bench is and the usual call order."""
         return {
             "about": "Infiniti Q50 combination-meter test bench. Main CAN bus (500k) drives the meter; "
-                     "a second 'av' bus emulates the head unit; an ESP32 switches B+/IG/ACC and hard-wired inputs.",
+                     "a second 'av' bus emulates the head unit; an ESP32 switches B+, IG (+ACC, tied together) and hard-wired inputs.",
             "safety": ["Never run bench (TX) mode against a real vehicle - use monitor=true there.",
                        "Meter-originated IDs (main 280/2DE/355/5C5, AV 683/6A8/6A9...) are never transmitted.",
                        "Keep simulated speed at 0 unless asked (it advances the odometer).",
                        "Report success only from the meter's response (av_* results say 'confirmed')."],
-            "typical_flow": ["list_adapters", "start_buses(main='kvaser:0', av='kvaser:1')",
+            "typical_flow": ["list_adapters", "start_buses(main='socketcan:can0', av='socketcan:can1')  (Windows/CANlib: kvaser:0, kvaser:1)",
                              "bench_connect / bench_set('BPLUS', true), bench_set('IG', true)",
                              "set_signal('main.180.ENGINE_RPM', 2000)", "get_dashboard",
                              "av_start", "av_status (wait for channels 'ready')", "av_set_page('Audio', true)"],
@@ -228,6 +228,41 @@ class BenchAPI:
         sdef = self.ctx.db.signal(path)
         self.ctx.background.clear_signal(sdef.message.bus, sdef.message.arbitration_id, sdef.name)
         return {"ok": True}
+
+    @tool
+    def set_fuel_economy(self, enabled: bool = True, target_mpg: Optional[float] = None,
+                         idle_gph: Optional[float] = None) -> dict:
+        """Instantaneous fuel economy: advances the 0x551 byte-1 fuel counter so the meter computes target_mpg
+        at the current speed (MPG = 13.1 * mph / counts per s). Below 0.5 mph the counter follows idle_gph
+        (US gal/h). The meter calculates average economy itself. Needs speed > 0 to show a value."""
+        self.ctx.fuel.set(enabled, target_mpg, idle_gph)
+        return self.ctx.fuel.status()
+
+    @tool
+    def set_engine_running(self, running: bool) -> dict:
+        """Engine on/off as the ECUs report it: off sets the engine flags in 0x160/0x182/0x300/0x580 to their
+        stopped values and RPM to 0 (RPM-gated warnings such as low oil and AT error go out); running returns
+        to the captured idle. The ignition-ready bits (0x551 B3.7, 0x239 B4.6) are not touched."""
+        self.ctx.set_engine_running(running)
+        return {"engine_running": self.ctx.engine_running()}
+
+    @tool
+    def blink_signal(self, path: str, on: bool, half_period_s: float = 0.4) -> dict:
+        """Flash a 1-bit signal like the BCM flasher (e.g. 'main.60D.LEFT_TURN'; both turn bits = hazards).
+        set_signal alone holds the bit steady, which the meter shows as a solid arrow. on=false stops and clears it."""
+        try:
+            sdef = self.ctx.db.signal(path)
+        except KeyError as exc:
+            raise ApiError(f"unknown signal {path}: {exc}")
+        if sdef.bit_length != 1:
+            raise ApiError(f"{path} is not a 1-bit signal")
+        if sdef.message.meter_origin:
+            raise ApiError(f"{path} is meter-originated; the bench never transmits it")
+        if on:
+            self.ctx.effects.blink(path, max(0.1, half_period_s))
+        else:
+            self.ctx.effects.stop(path)
+        return {"path": path, "blinking": self.ctx.effects.blinking(path)}
 
     @tool
     def read_signal(self, path: str) -> dict:
@@ -508,7 +543,7 @@ class BenchAPI:
 
     @tool
     def av_set_language(self, language: str) -> dict:
-        """Meter language: 'English', 'French' or 'Spanish' (French/Spanish codes are candidates)."""
+        """Meter language: 'English', 'French' or 'Spanish' (all confirmed on the meter)."""
         code = next((k for k, v in LANGUAGES.items() if v.lower().startswith(language.lower())), None)
         if code is None:
             raise ApiError("language must be English, French or Spanish")
@@ -521,7 +556,7 @@ class BenchAPI:
 
     @tool
     def av_set_display_effect(self, enabled: bool) -> dict:
-        """Startup animation ('Display Effect'). Write format unverified on the meter."""
+        """Startup animation ('Display Effect'). The write is confirmed by the meter (echo + read-back); the visible effect only shows at power-up."""
         return _wait_done(lambda d: self.ctx.hu.settings.set_display_effect(enabled, d))
 
     @tool
@@ -539,8 +574,10 @@ class BenchAPI:
 
     @tool
     def av_audio(self, source: str, fields: Optional[dict] = None) -> dict:
-        """Select an audio source (FM, AM, SXM, USB, IPOD, BT, AUX, ...) and set metadata. fields:
-        frequency, preset, station, radio_text (radio) or title, album, artist, playing, elapsed (media)."""
+        """Select an audio source and set metadata. Radio: FM, AM, SXM (fields frequency, preset, station,
+        radio_text). Media: CD, MUSICBOX, IPOD, USB, BT, DVD, IAS, DISC (fields title, album, artist, playing,
+        elapsed = the track number the meter shows). AUX has no fields. A media source with no metadata shows
+        its 'not connected / no disc' message. Keys come from registry/av_sources.json."""
         try:
             self.ctx.hu.audio.select(source.upper(), **(fields or {}))
         except KeyError as exc:
@@ -644,7 +681,7 @@ class BenchAPI:
 
     @tool
     def bench_set(self, name: str, on: bool) -> dict:
-        """Set a latched output: BPLUS, IG, ACC, AIRBAG, DRVR_BELT, PSGR_BELT, WASHER_FLUID, BRAKE_FLUID,
+        """Set a latched output: BPLUS, IG (also switches ACC, which is tied to IG; 'ACC' is an alias), AIRBAG, DRVR_BELT, PSGR_BELT, WASHER_FLUID, BRAKE_FLUID,
         PKB, HEADLIGHT_LH, HEADLIGHT_RH, ALTERNATOR, SECURITY."""
         try:
             self.ctx.bench.set(name.upper(), on, wait=True)
@@ -670,7 +707,7 @@ class BenchAPI:
 
     @tool
     def bench_power_cycle(self, off_s: float = 5.0) -> dict:
-        """Reboot the meter: B+/IG/ACC off for off_s seconds (>=5 for a real reboot), then restored."""
+        """Reboot the meter: B+ and IG (+ACC) off for off_s seconds (>=5 for a real reboot), then restored."""
         self.ctx.bench.power_cycle(off_s, wait=True)
         return {"ok": True}
 

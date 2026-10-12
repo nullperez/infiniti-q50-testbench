@@ -14,11 +14,10 @@
  * Compatible with q50tb/hw/esp32_bench.py and the original esp32-bench client.
  * Adds the ACC power channel.
  *
- * >>> SET THE PIN TABLE TO MATCH YOUR WIRING BEFORE FLASHING. <<<
- * The pins below are placeholders. To copy your current wiring, connect the
- * old firmware, open the app's Hardware page (or send LIST in a terminal) and
- * copy each NAME:kind:pin into s_channels[]. Leave a channel at -1 until it
- * is wired (ACC needs its own high-side relay: the ULN2803 can only sink).
+ * The pin table below is the owner's bench wiring, copied from the old
+ * firmware's LIST reply (2026-10-12). Check it against LIST before flashing a
+ * different board. ACC is tied to IG on this bench, so it stays -1 (unwired);
+ * a separate ACC needs its own high-side relay (the ULN2803 can only sink).
  *
  * Avoid strapping pins (0, 2, 5, 12, 15) for relays that must stay off at boot;
  * GPIO 12 high at reset changes the flash voltage on classic ESP32.
@@ -59,24 +58,24 @@ typedef struct {
 static channel_t s_channels[] = {
     {"BPLUS",        KIND_POWER,  25, 1},
     {"IG",           KIND_POWER,  26, 1},
-    {"ACC",          KIND_POWER,  -1, 1},   /* wire a relay to M57 pin 14, then set the GPIO */
-    {"SECURITY",     KIND_INPUT,  -1, 1},
-    {"ALTERNATOR",   KIND_INPUT,  27, 1},
-    {"AIRBAG",       KIND_INPUT,  14, 1},
-    {"WASHER_FLUID", KIND_INPUT,  33, 1},
-    {"BRAKE_FLUID",  KIND_INPUT,  13, 1},
-    {"PKB",          KIND_INPUT,  15, 1},
-    {"PSGR_BELT",    KIND_INPUT,   2, 1},
-    {"DRVR_BELT",    KIND_INPUT,   4, 1},
-    {"HEADLIGHT_LH", KIND_INPUT,  16, 1},
-    {"HEADLIGHT_RH", KIND_INPUT,  17, 1},
-    {"TRIP_RESET",   KIND_BUTTON,  5, 1},
-    {"PADDLE_UP",    KIND_BUTTON, 18, 1},
-    {"PADDLE_DOWN",  KIND_BUTTON, 19, 1},
-    {"BRIGHT_UP",    KIND_BUTTON, 21, 1},
-    {"BRIGHT_DOWN",  KIND_BUTTON, 22, 1},
-    {"STSW_B_LEFT",  KIND_BUTTON, 23, 1},
-    {"STSW_B_RIGHT", KIND_BUTTON, 32, 1},
+    {"ACC",          KIND_POWER,  -1, 1},   /* tied to IG on this bench */
+    {"SECURITY",     KIND_INPUT,   4, 1},
+    {"ALTERNATOR",   KIND_INPUT,  13, 1},
+    {"AIRBAG",       KIND_INPUT,  16, 1},
+    {"WASHER_FLUID", KIND_INPUT,  18, 1},
+    {"BRAKE_FLUID",  KIND_INPUT,  19, 1},
+    {"PKB",          KIND_INPUT,  21, 1},
+    {"PSGR_BELT",    KIND_INPUT,  22, 1},
+    {"DRVR_BELT",    KIND_INPUT,  23, 1},
+    {"HEADLIGHT_LH", KIND_INPUT,  12, 1},   /* strapping pin: must stay low at reset */
+    {"HEADLIGHT_RH", KIND_INPUT,  15, 1},
+    {"TRIP_RESET",   KIND_BUTTON, 17, 1},
+    {"PADDLE_UP",    KIND_BUTTON, 27, 1},
+    {"PADDLE_DOWN",  KIND_BUTTON, 32, 1},
+    {"BRIGHT_UP",    KIND_BUTTON, 33, 1},
+    {"BRIGHT_DOWN",  KIND_BUTTON, 14, 1},
+    {"STSW_B_LEFT",  KIND_BUTTON,  5, 1},
+    {"STSW_B_RIGHT", KIND_BUTTON,  2, 1},
 };
 #define N_CHANNELS (sizeof(s_channels) / sizeof(s_channels[0]))
 

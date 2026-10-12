@@ -77,8 +77,8 @@ Real HUs answered within 50–130 ms. A meter re-announce while open means it re
 | 2 page image | `C0 21` → 9 bytes S0…S8 | `C0 20 S0…S8` | confirmed; success only if echoed |
 | 8 alerts | `C0 81` → `aa bb` | `C0 80 aa bb` | byte0 outside-temp alert (candidate), byte1 nav alert (candidate) — `…30_0_30min_nav_outsidetemp` toggles byte1 then byte0 |
 | A tire pressure unit | `C0 A1` → `02 vv F0` | `C0 A0 02 vv 00` | **confirmed**: 01 kPa, 02 PSI, 03 bar (`kpa_psi_AVBUS`) |
-| C language | `C0 C1` → `01 01 E0 00 00` | `C0 C0 01 vv …` | 01 English confirmed; E0 looks like a 3-language mask; 02/03 French/Spanish order is a guess |
-| E display effect | `C0 E1` → `01` | `C0 E0 vv` (assumed) | no real-HU write captured; an emulator write was not applied |
+| C language | `C0 C1` → `01 01 E0 00 00` | `C0 C0 01 vv …` | 01 English, 02 French, 03 Spanish all confirmed on the bench 2026-10-12 (meter echo + translated page titles); E0 looks like a 3-language mask |
+| E display effect | `C0 E1` → `01` | `C0 E0 vv` (assumed) | bench 2026-10-12: emulator write 00 then 01 confirmed by echo and read-back (visual effect only at startup) |
 
 Page masks (handoff, confirmed): Range S0 0x01, Trip Distance S0 0x04, Average Speed S0 0x10, Driving Aids
 S0 0x40, Tire Pressure S1 0x01, Fuel Economy S1 0x10, Navigation S2 0x10, Audio S2 0x40, Blank S3 0x01,
@@ -95,11 +95,24 @@ Source select on 0x61D: `20 20 <code>` (peer echoes and sets items 8/A/C back).
 |---|---|---|---|
 | FM | `02 01 00` (`EF 01 nn` = preset nn) | `20 0D` band 01 | probable |
 | AM | `01 01 00` | `20 0D` band 10 | probable |
-| SXM | `15 01 00` | `20 0D` band 23 | candidate |
-| USB? | `53 FF FF` | `22 0D` type 03 + `2A 0D 00 12 2B 00 00` | candidate |
-| iPod? | `47 FF FF` | `22 0D` type 04 + `2A 0D 00 13 2C 00 00` | candidate |
-| BT audio? | `51 FF FF` | `22 0D` type 05 | candidate |
+| SXM | `15 01 00` | `20 0D` band 23 | probable (bench shows SXM, channel, station) |
+| iPod | `53 FF FF` | `22 0D` type 03 + `2A 0D 00 12 2B 00 00` | probable (bench: "iPod is not connected") |
+| USB | `47 FF FF` | `22 0D` type 04 + `2A 0D 00 13 2C 00 00` | probable (bench: "No USB memory") |
+| BT audio | `51 FF FF` | `22 0D` type 05 | probable (bench: "Bluetooth Audio" + title/artist) |
+| DVD | `55 FF FF` | `22 0D` type 06 | probable (bench: "DVD" + title/artist) |
+| IAS | unknown | `22 0D` type 07 | candidate (bench: title "IAS", left-aligned, with metadata; meaning unknown) |
+| Disc | `20 FF 00` | `22 0D` type 08 (+ `2A 0D 00 17 20 00 00` when empty) | probable (bench: "DISC" + track/title/artist; "No disc" from the 2A record) |
+| CD / Music Box | unknown | `22 0D` type 01 / 02 | candidate (bench: titles "CD" / "Music Box" with metadata) |
 | AUX | `32 FF FF` | `26 0D 00 00 02` | confirmed (handoff) |
+
+Bench 2026-10-12: the earlier USB/iPod guesses were swapped (the meter labels `53`/type 03 as iPod and
+`47`/type 04 as USB). The media header value the emulator sends as "elapsed" is shown as **Track N**.
+The media type byte alone sets the page title (01 CD, 02 Music Box, 03 iPod, 04 USB, 05 BT, 06 DVD, 07 "IAS", 08 DISC).
+`2A 0D 00 <dev> <msg> 00 00` overlays a message: 00 blank, 01 "Audio OFF", 2B/2C "iPod is not connected",
+2D "Check USB memory or iPod", 30 "Please eject disc". It hides metadata, so send it only for an empty source.
+
+Nav maneuver codes (0x629 byte 3), bench 2026-10-12: 1 straight, 2 slight left, 3 slight right, 4 left, 5 right,
+6 sharp left, 7 sharp right, 8 U-turn left, 9 U-turn right; 10+ makes the meter ignore the record.
 
 Radio record: `20 0D 00 00 <band> 00 <valid> <preset> <freq×3> FF <slot> 06 <len> <text1 UTF-16LE>` then
 `00 02 06 <len> <text2>` or `00 00 00 00`. Slot byte: FM 01, AM 02, SXM 07.
@@ -133,8 +146,8 @@ Title and artist show on the meter; album is hidden (handoff). Texts up to 32 ch
 
 ## 8. Open questions
 
-* Display-effect write format; language codes 02/03; S1–S8 unmapped bits (S2 0x20).
-* Media header byte 9 (elapsed?), the `2A 0D` record, source codes 0x20 and 0x55.
-* Maneuver code meanings; which heading value is north; units other than mi/ft.
+* S1–S8 unmapped bits (S2 0x20); whether the display-effect write changes the startup animation.
+* Media header byte 9 (shown as the track number on the bench), the `2A 0D` record.
+* Which heading value is north; units other than mi/ft.
 * Whether the meter needs 0x61D date/time on the bench, and the handoff note about sending it only after a
   meter heartbeat.

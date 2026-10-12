@@ -44,6 +44,8 @@ class AppSettings:
     # background
     background_profile: str = os.path.join(ROOT, "profiles", "main_idle_baseline.json")
     background_autostart: bool = True
+    # start the last-used buses (adapters + monitor/bench mode) at launch, without the bench-mode prompt
+    buses_autostart: bool = False
     # logging / ui
     log_max_frames: int = 200_000
     ui_refresh_ms: int = 100
@@ -51,7 +53,7 @@ class AppSettings:
     dashboard_units: str = "mph"
     dashboard_source: str = "auto"          # auto | rx | tx+rx
     # AV
-    av_auto_start: bool = False
+    av_auto_start: bool = True
     av_answer_delay_ms: int = 50
     av_ack_timeout_ms: int = 1000
     av_retries: int = 1
@@ -59,7 +61,7 @@ class AppSettings:
     av_auto_read_settings: bool = True
     # hardware
     esp32_port: str = ""
-    esp32_autoconnect: bool = False
+    esp32_autoconnect: bool = True       # saved port, else the auto-detected ESP32
     press_ms: int = 200
     # control server
     control_server: bool = True

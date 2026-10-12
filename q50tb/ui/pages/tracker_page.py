@@ -1,7 +1,7 @@
 """Monitoring > CAN Message Tracker.
 
 Byte colours: grey = waiting / beyond DLC, green = unchanged since the last
-highlight reset, orange = changed on the last frame, yellow = changed since
+highlight reset, yellow = changed on the last frame, orange = changed since
 the last reset. A stale message turns its whole row slate-blue.
 """
 
@@ -16,8 +16,8 @@ from q50tb.core.tracker import CHANGED, CHANGED_LAST, SAME, WAITING
 from q50tb.ui.pages.base import BasePage
 from q50tb.ui.widgets.common import button, mono_font, row
 
-COLORS = {WAITING: QColor("#4a4f55"), SAME: QColor("#2e7d32"), CHANGED_LAST: QColor("#ef6c00"),
-          CHANGED: QColor("#c9a400")}
+COLORS = {WAITING: QColor("#4a4f55"), SAME: QColor("#2e7d32"), CHANGED_LAST: QColor("#c9a400"),
+          CHANGED: QColor("#ef6c00")}
 STALE = QColor("#3f4f8f")
 NBYTES = 8
 

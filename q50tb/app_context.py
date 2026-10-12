@@ -41,6 +41,7 @@ from q50tb.signals.q50_main import build_database
 from q50tb.signals.vehicle_state import VehicleState
 from q50tb.sim.background import BackgroundManager
 from q50tb.sim.effects import Effects
+from q50tb.sim.fuel_economy import FuelEconomySim
 
 
 class AppContext:
@@ -63,6 +64,7 @@ class AppContext:
             self.buses.subscribe_all(fn)
         self.background = BackgroundManager(self.buses, self.scheduler, self.db)
         self.effects = Effects(self.background, self.scheduler, self.db)
+        self.fuel = FuelEconomySim(self.background, self.scheduler)
         self.send_queue = SendQueue(self.buses, self.scheduler)
         self.replay = ReplayEngine(self.buses, lambda bus: self.buses.channels[bus].protected_ids
                                    if bus in self.buses.channels else self.settings.protected(bus))
@@ -149,6 +151,22 @@ class AppContext:
         s.av_adapter = av_key
         if was_running:
             self.hu.start(AV)
+
+    def set_engine_running(self, running: bool) -> None:
+        """Engine on/off as the ECUs report it (q50_main.ENGINE_OFF_STATE). Off sets every engine flag to
+        its stopped value and RPM to 0; running clears those overrides (back to the captured idle)."""
+        from q50tb.signals.q50_main import ENGINE_OFF_STATE
+        for path, off_value in ENGINE_OFF_STATE.items():
+            s = self.db.signal(path)
+            if running:
+                self.background.clear_signal(s.message.bus, s.message.arbitration_id, s.name)
+            else:
+                self.background.set_signal(s.message.bus, s.message.arbitration_id, s.name, off_value)
+
+    def engine_running(self) -> bool:
+        """False while the engine-off overrides are in place."""
+        msg = self.background.messages.get(("main", 0x182))
+        return not (msg and msg.overlays.get("ENGINE_STOPPED"))
 
     def start_virtual_meter(self) -> None:
         """Offline demo: a software meter on the same python-can virtual bus as the AV bus."""

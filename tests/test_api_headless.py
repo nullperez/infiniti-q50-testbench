@@ -47,8 +47,8 @@ def test_stack():
         api.set_signal("main.180.ENGINE_RPM", 3000)
         api.set_signal("main.421.GEAR", 4)
         assert wait(lambda: abs((api.read_signal("main.180.ENGINE_RPM")["value"] or 0) - 3000) < 1)
-        dash = api.get_dashboard()
-        assert dash["gear"]["text"] == "D", dash["gear"]
+        # 0x421 has a longer period than 0x180, so wait for it separately
+        assert wait(lambda: api.get_dashboard()["gear"]["text"] == "D"), api.get_dashboard()["gear"]
         # counters keep rolling on overridden messages
         frames = [f for f in ctx.log.snapshot()[-3000:] if f.arbitration_id == 0x180]
         assert len({f.data[6] & 0xF for f in frames}) > 8
@@ -115,3 +115,35 @@ def test_stack():
 if __name__ == "__main__":
     test_stack()
     print("ok")
+
+
+def test_control_client_survives_server_restart():
+    """After an app restart the kept socket is dead; the next call must reconnect, not fail."""
+    import json
+    import socket
+    import threading
+
+    from q50tb.control.server import ControlClient
+
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(4)
+    port = srv.getsockname()[1]
+
+    def serve():
+        for n in range(2):
+            conn, _ = srv.accept()
+            f = conn.makefile("rwb")
+            req = json.loads(f.readline())
+            f.write((json.dumps({"id": req["id"], "result": n}) + "\n").encode())
+            f.flush()
+            if n == 0:
+                f.readline()        # the "restarted app" drops the old connection unanswered
+            f.close()
+            conn.close()
+
+    threading.Thread(target=serve, daemon=True).start()
+    client = ControlClient(port=port, timeout=5)
+    assert client.call("status") == 0
+    assert client.call("status") == 1   # first socket died: retried on a fresh connection
+    srv.close()

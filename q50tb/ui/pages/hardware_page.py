@@ -5,9 +5,22 @@ from __future__ import annotations
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPlainTextEdit,
                                QPushButton, QSpinBox, QVBoxLayout, QWidget)
 
-from q50tb.hw.bench_io import UI_CONTROLS
+from q50tb.hw.bench_io import KIND_OF, UI_CONTROLS
+from q50tb.hw.esp32_bench import POWER
 from q50tb.ui.pages.base import BasePage
 from q50tb.ui.widgets.common import Led, blocked, button, confirm, mono_font, row
+
+
+def _line(*widgets) -> QHBoxLayout:
+    h = QHBoxLayout()
+    for w in widgets:
+        h.addWidget(w, 1 if isinstance(w, (QPushButton, QCheckBox)) else 0)
+    return h
+
+
+# Momentary buttons as left/right (down/up) pairs: name -> (row, column)
+BUTTON_POS = {"STSW_B_LEFT": (0, 0), "STSW_B_RIGHT": (0, 1), "PADDLE_DOWN": (1, 0), "PADDLE_UP": (1, 1),
+              "BRIGHT_DOWN": (2, 0), "BRIGHT_UP": (2, 1), "TRIP_RESET": (3, 0)}
 
 
 class HardwarePage(BasePage):
@@ -34,39 +47,67 @@ class HardwarePage(BasePage):
         cl.addWidget(self.conn_lbl, 1)
         lay.addWidget(conn)
 
-        grid_box = QGroupBox("Outputs (checkbox = latched, button = momentary press)")
-        grid = QGridLayout(grid_box)
+        cl.addWidget(button("Read status", self.io.refresh))
+
         self.press_ms = QSpinBox()
         self.press_ms.setRange(20, 10000)
         self.press_ms.setValue(self.io.press_ms)
         self.press_ms.setSuffix(" ms")
         self.press_ms.valueChanged.connect(lambda v: setattr(self.io, "press_ms", v))
         self.widgets: dict[str, tuple] = {}
-        for i, (name, label, kind) in enumerate(UI_CONTROLS):
-            r, c = i % 10, (i // 10) * 4
-            led = Led("#20d020" if kind != "button" else "#ffb300")
-            if kind == "button":
-                w = QPushButton(label)
-                w.pressed.connect(lambda n=name: self._press(n))
-            else:
-                w = QCheckBox(label)
-                w.clicked.connect(lambda on, n=name: self._set(n, on))
+
+        # power | latched warning inputs | momentary buttons
+        groups = QHBoxLayout()
+        power_box = QGroupBox("Power")
+        pv = QVBoxLayout(power_box)
+        inputs_box = QGroupBox("Warning inputs (latched)")
+        ig = QGridLayout(inputs_box)
+        buttons_box = QGroupBox("Buttons (momentary)")
+        bg = QGridLayout(buttons_box)
+        n_in = n_btn = 0
+        for name, label, kind in UI_CONTROLS:
             pin = QLabel("")
             pin.setStyleSheet("color: #8a949c;")
-            grid.addWidget(led, r, c)
-            grid.addWidget(w, r, c + 1)
-            grid.addWidget(pin, r, c + 2)
+            if KIND_OF.get(name) == POWER:
+                led = Led("#20d020")
+                w = QPushButton(label)
+                w.setCheckable(True)
+                w.setMinimumHeight(40)
+                w.setStyleSheet("QPushButton:checked { background: #1b5e20; color: white; font-weight: bold; }")
+                w.clicked.connect(lambda on, n=name: self._set(n, on))
+                pv.addLayout(_line(led, w, pin))
+            elif kind == "button":
+                led = Led("#ffb300")
+                w = QPushButton(label)
+                w.pressed.connect(lambda n=name: self._press(n))
+                r, c = BUTTON_POS.get(name, (4 + n_btn // 2, n_btn % 2))
+                bg.addLayout(_line(led, w, pin), r, c)
+                n_btn += 1
+            else:
+                led = Led("#20d020")
+                w = QCheckBox(label)
+                w.clicked.connect(lambda on, n=name: self._set(n, on))
+                ig.addLayout(_line(led, w, pin), n_in // 2, n_in % 2)
+                n_in += 1
             self.widgets[name] = (w, led, pin, kind)
-        lay.addWidget(grid_box)
-        power = QLabel("Either B+ or IG alone keeps the meter on; a real reboot needs both off ~5 s and clears "
-                       "page registration and latched faults. ACC enables AV communication (needs its own relay; "
-                       "older firmware has no ACC channel).")
-        power.setWordWrap(True)
-        power.setStyleSheet("color: #9aa5ae;")
-        lay.addWidget(power)
-        lay.addWidget(row("Press duration", self.press_ms,
-                          button("Power-cycle meter (5 s)", lambda: self.io.power_cycle(5.0)),
-                          button("ALL OFF", self._all_off), button("Read status", self.io.refresh)))
+        pv.addWidget(button("Power-cycle meter (5 s)", lambda: self.io.power_cycle(5.0)))
+        all_off = button("ALL OFF", self._all_off)
+        all_off.setStyleSheet("QPushButton { background: #8e1b1b; color: white; }")
+        pv.addWidget(all_off)
+        note = QLabel("Either B+ or IG alone keeps the meter on; a real reboot needs both off ~5 s and clears "
+                      "page registration and latched faults. ACC is tied to IG on this bench, so IG also "
+                      "enables AV communication.")
+        note.setWordWrap(True)
+        note.setStyleSheet("color: #9aa5ae;")
+        pv.addWidget(note)
+        pv.addStretch(1)
+        ig.setRowStretch(ig.rowCount(), 1)
+        bg.addLayout(_line(QLabel("Press duration"), self.press_ms), bg.rowCount(), 0, 1, 2)
+        bg.setRowStretch(bg.rowCount(), 1)
+        groups.addWidget(power_box, 2)
+        groups.addWidget(inputs_box, 3)
+        groups.addWidget(buttons_box, 3)
+        lay.addLayout(groups)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setFont(mono_font(9))

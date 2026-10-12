@@ -1335,7 +1335,7 @@
    "name": "BCM",
    "bus": "main",
    "period_ms": 100.0,
-   "payload": "08 06 00 00 00 00 00 00",
+   "payload": "00 06 00 00 00 00 00 00",
    "enabled": true
   },
   {

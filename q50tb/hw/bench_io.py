@@ -15,10 +15,10 @@ from q50tb.hw.esp32_bench import (BUTTON, CHANNELS, INPUT, POWER, BenchError, Es
                                   find_bench_candidates, list_serial_ports)
 
 # What the Hardware page shows, in the order requested for the bench.
+# On this bench ACC is wired to IG, so one IG output switches both.
 UI_CONTROLS = [
     ("BPLUS", "B+ (battery)", "check"),
-    ("IG", "IG (ignition)", "check"),
-    ("ACC", "ACC (accessory)", "check"),
+    ("IG", "IG + ACC (ignition)", "check"),
     ("AIRBAG", "Air bag signal", "check"),
     ("TRIP_RESET", "Trip / Reset", "button"),
     ("STSW_B_LEFT", "Steering switch LEFT", "button"),
@@ -38,6 +38,7 @@ UI_CONTROLS = [
     ("SECURITY", "Security signal", "check"),
 ]
 KIND_OF = {name: kind for name, kind, _ in CHANNELS}
+ALIASES = {"ACC": "IG"}  # ACC is tied to IG on the bench
 
 
 class BenchIO:
@@ -80,6 +81,7 @@ class BenchIO:
         return self._run(lambda: self.client.disconnect(), wait, 3.0, "disconnect")
 
     def set(self, name: str, on: bool, wait: bool = False):
+        name = ALIASES.get(name, name)
         if KIND_OF.get(name) == BUTTON:
             raise BenchError(f"{name} is a momentary button; use press()")
         return self._run(lambda: self.client.set(name, on), wait, 3.0, f"SET {name} {int(on)}")
@@ -92,16 +94,16 @@ class BenchIO:
         return self._run(lambda: self.client.all_off(), wait, 3.0, "ALLOFF")
 
     def power_cycle(self, off_s: float = 5.0, wait: bool = False):
-        """Full meter reboot: B+ and IG (and ACC) off for ``off_s``, then back on."""
+        """Full meter reboot: B+ and IG (+ACC) off for ``off_s``, then back on."""
         def run():
             before = self.client.states()
-            for n in ("IG", "ACC", "BPLUS"):
+            for n in ("IG", "BPLUS"):
                 if self.client.channels.get(n) and self.client.channels[n].wired:
                     self.client.set(n, False)
             threading.Event().wait(off_s)
-            for n in ("BPLUS", "IG", "ACC"):
+            for n in ("BPLUS", "IG"):
                 info = self.client.channels.get(n)
-                if info and info.wired and before.get(n, n != "ACC"):
+                if info and info.wired and before.get(n, True):
                     self.client.set(n, True)
         return self._run(run, wait, off_s + 6.0, f"power cycle {off_s:.0f}s")
 

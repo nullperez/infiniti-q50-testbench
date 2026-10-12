@@ -4,9 +4,14 @@ Records (captured templates, fields filled in):
 
 radio  20 0D 00 00 <band> 00 <valid> <preset> <freq x3> FF  <slot> 06 <len> <text1>
        then  00 02 06 <len> <text2>   or   00 00 00 00 when there is no second text
-media  22 0D 00 00 <type> 00 <playing> 00 00 <elapsed>
+media  22 0D 00 00 <type> 00 <playing> 00 00 <track>
        06 <len> <title>  00 02 00 00  06 <len> <album>  00 01  06 <len> <artist>
+       <type> sets the page title (bench 2026-10-12): 01 CD, 02 Music Box, 03 iPod, 04 USB,
+       05 Bluetooth Audio, 06 DVD, 07 "IAS", 08 DISC. Byte 9 is shown as "Track N".
 aux    26 0D 00 00 02
+status 2A 0D 00 <dev> <msg> 00 00  message over the audio page: 00 blank, 01 "Audio OFF",
+       2B/2C "iPod is not connected", 2D "Check USB memory or iPod", 30 "Please eject disc".
+       Sent only when there is no metadata, otherwise it hides the track info.
 
 Slot 1 (title) and slot 3 (artist) show on the meter's rich-source page;
 slot 2 (album) is hidden. The meter generates track numbers itself.
@@ -102,6 +107,8 @@ def build_records(src: Source, st: AudioState) -> list[bytes]:
         recs = [radio_record(src, st)]
     elif src.kind == "media":
         recs = [media_record(src, st)]
+        if st.title or st.album or st.artist:
+            return recs     # the status record would replace the track info with a message
     elif src.kind == "aux":
         recs = [src.record or bytes.fromhex("260D000002")]
     else:

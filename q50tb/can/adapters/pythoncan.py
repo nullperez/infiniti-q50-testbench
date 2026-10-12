@@ -46,8 +46,10 @@ def socketcan_links() -> list[str]:
 
 
 def socketcan_link_info(name: str) -> dict:
-    """{'up': bool, 'listen_only': bool, 'bitrate': int|None, 'fd': bool, 'virtual': bool}"""
-    info = {"up": False, "listen_only": False, "bitrate": None, "fd": False, "virtual": False, "raw": ""}
+    """{'up': bool, 'listen_only': bool, 'bitrate': int|None, 'fd': bool, 'virtual': bool,
+    'supported': list[str]|None}  (supported = driver ctrlmode_supported; None if ip doesn't report it)"""
+    info = {"up": False, "listen_only": False, "bitrate": None, "fd": False, "virtual": False,
+            "supported": None, "raw": ""}
     if not shutil.which("ip"):
         return info
     try:
@@ -65,6 +67,8 @@ def socketcan_link_info(name: str) -> dict:
     ctrl = idata.get("ctrlmode", [])
     info["listen_only"] = "LISTEN-ONLY" in ctrl
     info["fd"] = "FD" in ctrl
+    if "ctrlmode_supported" in idata:
+        info["supported"] = idata["ctrlmode_supported"]
     info["bitrate"] = idata.get("bittiming", {}).get("bitrate")
     return info
 
@@ -104,14 +108,16 @@ def discover() -> list[AdapterInfo]:
         return out
     for link in socketcan_links():
         li = socketcan_link_info(link)
+        sup = li["supported"]
         state = "up" if li["up"] else "down"
         rate = f" {li['bitrate']}bps" if li["bitrate"] else ""
         lo = " LISTEN-ONLY" if li["listen_only"] else ""
         out.append(AdapterInfo(
             backend="socketcan", channel=link,
             name=f"SocketCAN {link} ({state}{rate}{lo})",
-            supports_listen_only=True if li["virtual"] or li["listen_only"] else None,
-            supports_fd=True, is_virtual=li["virtual"]))
+            supports_listen_only=(True if li["virtual"] or li["listen_only"] else
+                                  None if sup is None else "LISTEN-ONLY" in sup),
+            supports_fd=li["virtual"] or sup is None or "FD" in sup, is_virtual=li["virtual"]))
     for i in range(2):
         out.append(AdapterInfo(backend="virtual", channel=f"q50tb-virtual-{i}",
                                name=f"Software virtual bus {i}", supports_listen_only=True,
@@ -132,20 +138,28 @@ class PythonCanAdapter(Adapter):
         backend = self.info.backend
         kwargs = dict(self.info.extra)
         if backend == "socketcan":
-            li = socketcan_link_info(self.info.channel)
-            needs = (config.listen_only != li["listen_only"] or
-                     (li["bitrate"] and li["bitrate"] != config.bitrate) or config.fd != li["fd"])
-            if not li["virtual"] and needs:
-                if config.configure_link:
-                    socketcan_configure(self.info.channel, config)
-                    li = socketcan_link_info(self.info.channel)
-                elif config.listen_only:
-                    cmd = " && ".join(" ".join(c) for c in socketcan_configure_commands(self.info.channel, config))
-                    raise ListenOnlyUnsupported(
-                        f"{self.info.channel} is not in LISTEN-ONLY mode. Enable 'Configure SocketCAN link' "
-                        f"in Settings or run:\n  sudo sh -c '{cmd}'")
-            if config.listen_only and not (li["listen_only"] or li["virtual"]):
-                raise ListenOnlyUnsupported(f"{self.info.channel} still not LISTEN-ONLY after configuration")
+            name = self.info.channel
+            li = socketcan_link_info(name)
+            if li["virtual"]:
+                if not li["up"]:
+                    raise AdapterError(f"{name} is down (run: sudo ip link set {name} up)")
+            else:
+                needs = (not li["up"] or config.listen_only != li["listen_only"] or
+                         li["bitrate"] != config.bitrate or config.fd != li["fd"])
+                if needs and config.configure_link:
+                    socketcan_configure(name, config)
+                    li = socketcan_link_info(name)
+                elif needs:
+                    cmd = " && ".join(" ".join(c) for c in socketcan_configure_commands(name, config))
+                    have = (f"{'up' if li['up'] else 'down'}, bitrate {li['bitrate']}, "
+                            f"listen-only {'on' if li['listen_only'] else 'off'}, fd {'on' if li['fd'] else 'off'}")
+                    msg = (f"{name} is not configured for this bus ({have}). Enable 'Let the app configure "
+                           f"SocketCAN links' in Settings or run:\n  sudo sh -c '{cmd}'")
+                    raise ListenOnlyUnsupported(msg) if config.listen_only else AdapterError(msg)
+                if not li["up"]:
+                    raise AdapterError(f"{name} is still down after configuration")
+                if config.listen_only and not li["listen_only"]:
+                    raise ListenOnlyUnsupported(f"{name} still not LISTEN-ONLY after configuration")
             self._bus = can.Bus(interface="socketcan", channel=self.info.channel,
                                 fd=config.fd, receive_own_messages=False, **kwargs)
         elif backend == "virtual":

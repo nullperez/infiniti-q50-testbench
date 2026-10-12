@@ -41,7 +41,7 @@ BUTTON = "button"
 CHANNELS: tuple[tuple[str, str, str], ...] = (
     ("BPLUS", POWER, "B+"),
     ("IG", POWER, "IG"),
-    ("ACC", POWER, "ACC"),          # new in this repo's firmware; older firmware omits it
+    ("ACC", POWER, "ACC"),          # optional; the owner's bench ties ACC to IG and leaves it unwired
     ("SECURITY", INPUT, "Security"),
     ("ALTERNATOR", INPUT, "Alternator"),
     ("AIRBAG", INPUT, "Air bag"),

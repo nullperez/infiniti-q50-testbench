@@ -1,24 +1,101 @@
 {
-  "_comment": "Navigation maneuver codes (0x629 record byte 3). Codes 1-5 were seen in car captures; labels are guesses from the street context until confirmed on the meter. Rename freely - the UI and MCP read this file.",
-  "maneuvers": [
-    {"code": 0, "label": "None", "confidence": "observed"},
-    {"code": 1, "label": "Code 0x01 (seen: highway ramp / keep)", "confidence": "candidate"},
-    {"code": 2, "label": "Code 0x02 (seen: turnpike)", "confidence": "candidate"},
-    {"code": 3, "label": "Code 0x03 (seen: continue on highway)", "confidence": "candidate"},
-    {"code": 4, "label": "Code 0x04 (seen: residential turn)", "confidence": "candidate"},
-    {"code": 5, "label": "Code 0x05 (seen: residential turn)", "confidence": "candidate"}
-  ],
-  "states": [
-    {"code": 0, "label": "Idle (compass)", "confidence": "observed"},
-    {"code": 2, "label": "Next maneuver (far)", "confidence": "observed"},
-    {"code": 3, "label": "Guidance active (far)", "confidence": "observed"},
-    {"code": 16, "label": "Approach start (0x10)", "confidence": "observed"},
-    {"code": 17, "label": "Approaching, progress bar (0x11)", "confidence": "observed"},
-    {"code": 18, "label": "At maneuver (0x12)", "confidence": "observed"}
-  ],
-  "units": [
-    {"code": 0, "label": "none"},
-    {"code": 3, "label": "mi"},
-    {"code": 8, "label": "ft"}
-  ]
+ "_comment": "Navigation maneuver codes (0x629 record byte 3). Codes 1-9 confirmed on the meter 2026-10-12 (arrow drawn); codes 10-12 made the meter ignore the whole record. Rename freely - the UI and MCP read this file.",
+ "maneuvers": [
+  {
+   "code": 0,
+   "label": "None",
+   "confidence": "observed"
+  },
+  {
+   "code": 1,
+   "label": "Straight",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 2,
+   "label": "Slight left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 3,
+   "label": "Slight right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 4,
+   "label": "Left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 5,
+   "label": "Right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 6,
+   "label": "Sharp left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 7,
+   "label": "Sharp right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 8,
+   "label": "U-turn left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 9,
+   "label": "U-turn right",
+   "confidence": "confirmed"
+  }
+ ],
+ "states": [
+  {
+   "code": 0,
+   "label": "Idle (compass)",
+   "confidence": "observed"
+  },
+  {
+   "code": 2,
+   "label": "Next maneuver (far)",
+   "confidence": "observed"
+  },
+  {
+   "code": 3,
+   "label": "Guidance active (far)",
+   "confidence": "observed"
+  },
+  {
+   "code": 16,
+   "label": "Approach start (0x10)",
+   "confidence": "observed"
+  },
+  {
+   "code": 17,
+   "label": "Approaching, progress bar (0x11)",
+   "confidence": "observed"
+  },
+  {
+   "code": 18,
+   "label": "At maneuver (0x12)",
+   "confidence": "observed"
+  }
+ ],
+ "units": [
+  {
+   "code": 0,
+   "label": "none"
+  },
+  {
+   "code": 3,
+   "label": "mi"
+  },
+  {
+   "code": 8,
+   "label": "ft"
+  }
+ ]
 }

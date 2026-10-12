@@ -304,18 +304,32 @@ class BackgroundManager:
         msg = self.ensure(bus, cid)
         with msg._lock:
             msg.overlays[signal] = raw
+        for link in self.db.linked(bus, cid, signal):
+            lmsg = self.messages.get((link.message.bus, link.message.arbitration_id))
+            if lmsg is None:  # only mirror into messages the profile already sends
+                continue
+            with lmsg._lock:
+                lmsg.overlays[link.name] = link.phys_to_raw(value)
         self.version += 1
         return raw
 
-    def set_signal_raw(self, bus: str, cid: int, signal: str, raw: int) -> None:
+    def set_signal_raw(self, bus: str, cid: int, signal: str, raw: int, quiet: bool = False) -> None:
+        """quiet=True skips the version bump (no UI resync) for values a simulator updates many times a second."""
         mdef = self.db.get(bus, cid)
         if mdef is None:
             raise KeyError(f"no signal definition for {bus} 0x{cid:03X}")
-        mdef.signal(signal)
+        sdef = mdef.signal(signal)
         msg = self.ensure(bus, cid)
         with msg._lock:
             msg.overlays[signal] = int(raw)
-        self.version += 1
+        for link in self.db.linked(bus, cid, signal):
+            lmsg = self.messages.get((link.message.bus, link.message.arbitration_id))
+            if lmsg is None:  # only mirror into messages the profile already sends
+                continue
+            with lmsg._lock:
+                lmsg.overlays[link.name] = link.phys_to_raw(sdef.raw_to_phys(int(raw)))
+        if not quiet:
+            self.version += 1
 
     def clear_signal(self, bus: str, cid: int, signal: Optional[str] = None) -> None:
         msg = self.messages.get((bus, cid))
@@ -326,6 +340,9 @@ class BackgroundManager:
                 else:
                     msg.overlays.pop(signal, None)
             self.version += 1
+        if signal is not None:
+            for link in self.db.linked(bus, cid, signal):
+                self.clear_signal(link.message.bus, link.message.arbitration_id, link.name)
 
     def signal_value(self, bus: str, cid: int, signal: str) -> Optional[float]:
         """Current commanded value (overlay, else base payload)."""

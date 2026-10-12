@@ -206,12 +206,37 @@ class MainWindow(QMainWindow):
         self.server = None
         self.apply_settings()
         self._bus_state()
-        if ctx.settings.esp32_autoconnect and ctx.settings.esp32_port:
-            ctx.bench.connect(ctx.settings.esp32_port)
+        self._autoconnect_esp32()
+        if ctx.settings.buses_autostart:
+            QTimer.singleShot(300, self._autostart_buses)
         act = QAction("Quit", self)
         act.setShortcut("Ctrl+Q")
         act.triggered.connect(self.close)
         self.addAction(act)
+
+    def _autoconnect_esp32(self) -> None:
+        s, bench = self.ctx.settings, self.ctx.bench
+        if not s.esp32_autoconnect:
+            return
+        ports = bench.ports()
+        port = s.esp32_port if s.esp32_port in ports else next(iter(bench.candidates()), "")
+        if not port:
+            self.statusBar().showMessage("ESP32: no bench controller found (Hardware page)", 8000)
+            return
+        s.esp32_port = port
+        bench.connect(port)
+
+    def _autostart_buses(self) -> None:
+        s = self.ctx.settings
+        if self.ctx.buses.running or not s.main_adapter:
+            return
+        try:
+            self.ctx.start_buses(s.main_adapter, s.av_adapter or None, monitor=s.monitor_mode, bitrate=s.bitrate, fd=s.fd)
+            self.statusBar().showMessage(
+                f"buses started at launch ({'MONITOR' if s.monitor_mode else 'BENCH'}): "
+                f"{s.main_adapter}{' + ' + s.av_adapter if s.av_adapter else ''}", 10000)
+        except Exception as exc:
+            error_box(self, "Start buses at launch", f"{type(exc).__name__}: {exc}")
 
     def apply_settings(self) -> None:
         s = self.ctx.settings

@@ -89,7 +89,8 @@ class Gauge(QWidget):
             p.setPen(FG)
             for v, txt in ((self.lo, self.end_labels[0]), (self.hi, self.end_labels[1])):
                 a = self._angle(v)
-                p.drawText(QRectF(60 * math.cos(a) - 16, -60 * math.sin(a) - 9, 32, 18), Qt.AlignCenter, txt)
+                # a little below the end tick so it does not collide with the end number
+                p.drawText(QRectF(60 * math.cos(a) - 16, -60 * math.sin(a) + 7, 32, 18), Qt.AlignCenter, txt)
         # titles
         f.setPointSizeF(8)
         f.setBold(False)

@@ -34,7 +34,7 @@ PAGES = {  # name: (byte, mask)
 ITEM_CAPS, ITEM_PAGES, ITEM_ALERTS, ITEM_UNITS, ITEM_LANGUAGE, ITEM_EFFECT = 0x0, 0x2, 0x8, 0xA, 0xC, 0xE
 
 UNITS = {0x01: "kPa", 0x02: "PSI", 0x03: "bar"}                     # confirmed by kpa_psi_AVBUS capture
-LANGUAGES = {0x01: "English", 0x02: "French (candidate)", 0x03: "Spanish (candidate)"}
+LANGUAGES = {0x01: "English", 0x02: "French", 0x03: "Spanish"}   # all three confirmed on the bench 2026-10-12
 
 
 @dataclass
@@ -136,11 +136,15 @@ class SettingsService:
     # ── requests ────────────────────────────────────────────────────
     def read(self, item: int, done: Optional[Callable[[ItemState], None]] = None) -> None:
         def on_response(st: Optional[ItemState]):
+            it = self.state.items.setdefault(item, ItemState())
             if st is None:
-                it = self.state.items.setdefault(item, ItemState())
                 it.last_result = "read timeout: no response from meter"
-                self._changed()
                 st = ItemState(status=None)
+            elif st.status != 0:
+                it.last_result = f"read: meter status {st.status:02X}"
+            else:
+                it.last_result = "read ok"
+            self._changed()
             if done:
                 done(st)
         self._submit(_Request(item, bytes([0xC0, (item << 4) | 0x1]), f"read item {item:X}", on_response))

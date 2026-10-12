@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from q50tb.core import timebase
 from q50tb.core.scheduler import Job, Scheduler
 from q50tb.sim.background import BackgroundManager
 from q50tb.signals.model import SignalDatabase
@@ -21,12 +22,17 @@ class Effects:
         self.stop(path)
         s = self.db.signal(path)
         m = s.message
-        state = {"on": False}
+        state = {"on": None}
 
         def tick():
-            state["on"] = not state["on"]
-            self.bg.set_signal_raw(m.bus, m.arbitration_id, s.name, 1 if state["on"] else 0)
-        self._blink[path] = self.sched.every(half_period_s, tick, name=f"blink {path}")
+            # Phase comes from the clock, so every blinker with the same period stays in step
+            # (hazards: both turn bits flash together).
+            on = int(timebase.now() / half_period_s) % 2 == 0
+            if on != state["on"]:
+                state["on"] = on
+                self.bg.set_signal_raw(m.bus, m.arbitration_id, s.name, 1 if on else 0)
+        tick()
+        self._blink[path] = self.sched.every(min(0.05, half_period_s / 4), tick, name=f"blink {path}")
 
     def stop(self, path: str, final: Optional[int] = 0) -> None:
         job = self._blink.pop(path, None)

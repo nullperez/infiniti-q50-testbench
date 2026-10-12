@@ -192,10 +192,18 @@ class MessageDef:
 
 
 class SignalDatabase:
-    def __init__(self, messages: list[MessageDef]):
+    def __init__(self, messages: list[MessageDef], links: Optional[dict[str, tuple[str, ...]]] = None):
         self.messages: dict[tuple[str, int], MessageDef] = {}
         for m in messages:
             self.add(m)
+        self.links: dict[tuple[str, int, str], list[SignalDef]] = {}
+        for src, dsts in (links or {}).items():
+            s = self.signal(src)
+            self.links[(s.message.bus, s.message.arbitration_id, s.name)] = [self.signal(d) for d in dsts]
+
+    def linked(self, bus: str, cid: int, name: str) -> list[SignalDef]:
+        """Other signals that mirror this one (see LINKED_SIGNALS)."""
+        return self.links.get((bus, cid, name), [])
 
     def add(self, m: MessageDef) -> None:
         self.messages[(m.bus, m.arbitration_id)] = m

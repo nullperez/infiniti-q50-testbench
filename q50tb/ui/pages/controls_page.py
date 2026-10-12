@@ -9,13 +9,13 @@ the message itself is enabled/disabled on the Background Messages page.
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QFormLayout, QGridLayout, QGroupBox,
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QGridLayout, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QPushButton, QRadioButton, QScrollArea,
                                QTabWidget, QVBoxLayout, QWidget)
 
 from q50tb.signals.q50_main import GEARS
 from q50tb.ui.pages.base import BasePage, SignalBinder, signal_tooltip
-from q50tb.ui.widgets.common import button, check, confidence_badge, row
+from q50tb.ui.widgets.common import blocked, button, check, confidence_badge, row
 
 KMH_PER_MPH = 1.609344
 
@@ -64,7 +64,34 @@ class ControlsPage(BasePage):
         w = QWidget()
         f = QFormLayout(w)
         b = self.b
+        self.engine_on = QCheckBox("Engine running")
+        self.engine_on.setChecked(True)
+        self.engine_on.setToolTip("Off: engine flags in 0x160/0x182/0x300/0x580 set to 'stopped' and RPM 0 "
+                                  "(as with ignition on, engine off). On: back to the captured idle.")
+        self.engine_on.clicked.connect(lambda on: (self.ctx.set_engine_running(on), self.b.sync_all()))
+        f.addRow("Engine", self.engine_on)
         f.addRow("Engine RPM", b.slider("main.180.ENGINE_RPM", 0, 8000, 50, suffix="rpm"))
+        fsim = self.ctx.fuel
+        self.fuel_on = QCheckBox("Simulate fuel use")
+        self.fuel_on.setToolTip("Advances the 0x551 byte-1 fuel counter so the meter shows the target "
+                                "instantaneous MPG at the current speed (MPG = 13.1 x mph / counts per s).")
+        self.fuel_on.clicked.connect(lambda on: self.ctx.fuel.set(enabled=on))
+        self.fuel_mpg = QDoubleSpinBox()
+        self.fuel_mpg.setRange(1, 99)
+        self.fuel_mpg.setDecimals(1)
+        self.fuel_mpg.setValue(fsim.target_mpg)
+        self.fuel_mpg.setSuffix(" mpg")
+        self.fuel_mpg.valueChanged.connect(lambda v: self.ctx.fuel.set(target_mpg=v))
+        self.fuel_idle = QDoubleSpinBox()
+        self.fuel_idle.setRange(0, 5)
+        self.fuel_idle.setDecimals(2)
+        self.fuel_idle.setSingleStep(0.05)
+        self.fuel_idle.setValue(fsim.idle_gph)
+        self.fuel_idle.setSuffix(" gal/h idle")
+        self.fuel_idle.valueChanged.connect(lambda v: self.ctx.fuel.set(idle_gph=v))
+        self.fuel_state = QLabel("")
+        self.fuel_state.setStyleSheet("color: #9aa5ae;")
+        f.addRow("Instantaneous economy", row(self.fuel_on, self.fuel_mpg, self.fuel_idle, self.fuel_state))
         speed_note = QLabel("Speed moves the odometer on the meter. Keep it at 0 unless you mean it.")
         speed_note.setStyleSheet("color: #ffb300;")
         to_kmh = lambda mph: mph * KMH_PER_MPH  # noqa: E731
@@ -192,12 +219,12 @@ class ControlsPage(BasePage):
         f.addRow("Chassis error (0x56C B0.1)", row(b.checkbox("main.56C.CHASSIS_ERROR"), confidence_badge("candidate")))
         f.addRow("TCS / slip (0x354)", b.combo("main.354.TCS_STATE"))
         v.addLayout(f)
-        abs_box = QGroupBox("ABS / BRAKE (0x354 byte 4) - sequence dependent")
+        abs_box = QGroupBox("ABS / BRAKE (0x354 byte 4) - lamp + hold bits")
         al = QVBoxLayout(abs_box)
-        al.addWidget(row(b.checkbox("main.354.ABS", "ABS (bit 4)"), b.checkbox("main.354.ABS_LATCH", "ABS latch (bit 3)"),
-                         b.checkbox("main.354.BRAKE", "BRAKE (bit 2)"), b.checkbox("main.354.BRAKE_LATCH", "BRAKE latch (bit 1)")))
-        note = QLabel("Observed: 0x10 from clear did not light ABS; 0x08 lit it; 0x18 then 0x10 kept it; 0x00 cleared. "
-                      "0x04 lit BRAKE only after 0x02. Parking-brake/brake-fluid inputs light BRAKE independently.")
+        al.addWidget(row(b.checkbox("main.354.ABS", "ABS hold (bit 4)"), b.checkbox("main.354.ABS_LATCH", "ABS lamp (bit 3)"),
+                         b.checkbox("main.354.BRAKE", "BRAKE hold (bit 2)"), b.checkbox("main.354.BRAKE_LATCH", "BRAKE lamp (bit 1)")))
+        note = QLabel("Lamp bits (3, 1) light ABS/BRAKE; hold bits (4, 2) keep each lamp as it is while set, so a hold "
+                      "bit from off never lights it. 0x00 clears. Parking-brake/brake-fluid inputs light BRAKE independently.")
         note.setWordWrap(True)
         al.addWidget(note)
         al.addWidget(row(button("Light ABS (08 → 18 → 10)", self._abs_seq),
@@ -301,7 +328,7 @@ class ControlsPage(BasePage):
         f2.addRow("Warnings", row(b.checkbox("main.2B1.LANE_WARN_LEFT", "Lane L"), b.checkbox("main.2B1.LANE_WARN_RIGHT", "Lane R"),
                                   b.checkbox("main.2B1.BSW_LEFT_BLINK", "BSW L blink"), b.checkbox("main.2B1.BSW_RIGHT_BLINK", "BSW R blink")))
         f2.addRow("", row(b.checkbox("main.2B1.EMERGENCY_BRAKE_WARNING", "Emergency brake warning"),
-                          b.checkbox("main.2B1.WINDING_ROAD", "Winding road"),
+                          b.checkbox("main.2B1.WINDING_ROAD", "Winding road (needs car ahead 1/2)"),
                           b.checkbox("main.2B1.FEB_LIGHT", "FEB light"), b.checkbox("main.2B1.FEB_LIGHT_BLINK", "FEB blink")))
         f2.addRow("Tones", b.combo("main.2B1.TONES"))
         f2.addRow("Page", row(b.checkbox("main.2B1.PROMPT_PAGE", "Prompt ADAS page (+beep)"),
@@ -327,8 +354,7 @@ class ControlsPage(BasePage):
         g.addWidget(b.checkbox("main.56C.RL_WHEEL_HIGHLIGHT", "RL wheel"), 1, 0)
         g.addWidget(b.checkbox("main.56C.RR_WHEEL_HIGHLIGHT", "RR wheel"), 1, 1)
         g.addWidget(b.checkbox("main.56C.TRACE_BLUE_SQUARES", "Trace: blue squares"), 2, 0)
-        g.addWidget(b.checkbox("main.56C.TRACE_2_SQUARES_WHEELS", "Trace: 2 squares wheels"), 2, 1)
-        g.addWidget(b.checkbox("main.56C.TRACE_BLUE_LINES_WHEELS", "Trace: blue lines"), 3, 0)
+        g.addWidget(row(QLabel("Trace: blue-square lines"), b.combo("main.56C.TRACE_SQUARE_LINES")), 2, 1)
         g.addWidget(b.checkbox("main.56C.TRACE_SADDLE_CURVE", "Trace: saddle curve"), 3, 1)
         g.addWidget(b.checkbox("main.56C.QUAD_BEEP", "Quad beep"), 4, 0)
         g.addWidget(b.checkbox("main.56C.CONTINUOUS_BEEP", "Continuous beep"), 4, 1)
@@ -336,9 +362,12 @@ class ControlsPage(BasePage):
         fo = QGroupBox("Forces (0x292) - units not established")
         f3 = QFormLayout(fo)
         f3.addRow("Brake pressure (raw)", b.spin("main.292.BRAKE_PRESSURE", 0, 255))
-        f3.addRow("Service distance (0x51B)", row(b.spin("main.51B.SERVICE_DISTANCE", 0, 81915, 5, suffix="km"),
-                                                  confidence_badge("candidate")))
         v.addWidget(fo)
+        sv = QGroupBox("Service (0x553)")
+        f4 = QFormLayout(sv)
+        f4.addRow("Engine Oil 'Service due in'", row(b.spin("main.553.SERVICE_DISTANCE", 0, 81915, 5, suffix=" km"),
+                                                     confidence_badge("confirmed")))
+        v.addWidget(sv)
         v.addStretch(1)
         return w
 
@@ -409,6 +438,14 @@ class ControlsPage(BasePage):
         if bg.version != getattr(self, "_seen_version", -1):
             self._seen_version = bg.version
             self.b.sync_all(skip_focused=True)
+            with blocked(self.engine_on):
+                self.engine_on.setChecked(self.ctx.engine_running())
+        fs = self.ctx.fuel.status()
+        if self.fuel_on.isChecked() != fs["enabled"]:
+            with blocked(self.fuel_on):
+                self.fuel_on.setChecked(fs["enabled"])
+        self.fuel_state.setText(f"{fs['counts_per_s']:.1f} counts/s at {fs['speed_mph']:.0f} mph"
+                                if fs["enabled"] else "off")
         disabled = [f"{m.arbitration_id:03X}" for m in bg.messages.values() if not m.enabled]
         txt = f"Profile: {bg.profile_name or '—'}. "
         if not self.ctx.buses.running:

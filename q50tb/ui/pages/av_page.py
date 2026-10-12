@@ -50,7 +50,7 @@ class AvPage(BasePage):
         tl.addWidget(self.bus_label, 2, 0, 1, 4)
         hint = QLabel("Channels open when the meter announces (00 20). The meter re-announces until answered; "
                       "if a channel stays 'waiting', keep this enabled and cycle the meter power (Hardware page). "
-                      "ACC must be powered for AV communication.")
+                      "ACC (tied to IG on the bench) must be powered for AV communication.")
         hint.setWordWrap(True)
         hint.setStyleSheet("color: #9aa5ae;")
         tl.addWidget(hint, 3, 0, 1, 4)
@@ -83,25 +83,33 @@ class AvPage(BasePage):
 
     # ── master / bus ────────────────────────────────────────────────
     def _fill_buses(self) -> None:
+        keep = self.bus_combo.currentData() or self.ctx.settings.av_adapter
         self.bus_combo.clear()
         main = self.ctx.buses.channels.get(MAIN)
         main_key = main.adapter.info.key if main else self.ctx.settings.main_adapter
         for a in self.ctx.adapters or self.ctx.refresh_adapters():
             if a.key != main_key:
                 self.bus_combo.addItem(a.describe(), a.key)
-        i = self.bus_combo.findData(self.ctx.settings.av_adapter)
+        i = self.bus_combo.findData(keep)
         if i >= 0:
             self.bus_combo.setCurrentIndex(i)
 
     def _open_bus(self) -> None:
+        if not self.ctx.buses.running:
+            error_box(self, "AV bus", "Start the main bus first (top bar). Choosing the AV adapter in the top bar "
+                                      "before 'Start bus' opens both together.")
+            return
+        self._fill_buses()
         key = self.bus_combo.currentData()
         if not key:
-            return
-        if not self.ctx.buses.running:
-            error_box(self, "AV bus", "Start the main bus first (top bar). You can also pick the AV adapter there.")
+            error_box(self, "AV bus", "No adapter left for the AV bus (the main bus uses the only one). Press ⟳ in "
+                                      "the top bar to look for adapters.")
             return
         try:
             self.ctx.open_av_bus(key)
+            self.ctx.settings.av_adapter = key
+            if not self.hu.running:
+                self.hu.start(AV)       # opening the bus from this page means "talk to the meter"
         except Exception as exc:
             error_box(self, "AV bus", str(exc))
 
