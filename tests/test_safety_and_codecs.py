@@ -5,6 +5,8 @@ import sys
 import tempfile
 import time
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from q50tb.app_context import AppContext  # noqa: E402
@@ -73,12 +75,10 @@ def test_ownership_and_protected():
 
 def test_kvaser_virtual_channels():
     if not kvaser.available():
-        print("kvaser not available - skipped")
-        return
+        pytest.skip("Kvaser CANlib/driver not installed")
     infos = [i for i in kvaser.discover() if i.is_virtual]
     if len(infos) < 2:
-        print("no kvaser virtual pair - skipped")
-        return
+        pytest.skip("no Kvaser virtual channel pair")
     a, b = BusManager(), BusManager()
     a.start({"main": infos[0]}, BusConfig(), monitor_only=False, protected={})
     b.start({"main": infos[1]}, BusConfig(), monitor_only=True, protected={})
@@ -137,7 +137,10 @@ def test_id_filter():
 
 
 def test_capture_roundtrip():
-    cap = load_capture(os.path.join(ROOT, "reference_logs", "Q50_Dumps", "AV_STARTUP_2.pcapng"))
+    path = os.path.join(ROOT, "reference_logs", "Q50_Dumps", "AV_STARTUP_2.pcapng")
+    if not os.path.exists(path):
+        pytest.skip("reference_logs not present")
+    cap = load_capture(path)
     assert cap.frames and cap.interfaces == ["can1"]
     frames = cap.frames[:500]
     frames[3].direction = "TX"

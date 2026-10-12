@@ -7,7 +7,7 @@ Python 3.10+ / PySide6, Windows and Linux (Ubuntu). CAN through **Kvaser CANlib*
 ## Start
 
 ```
-run.bat            (Windows)       ./run.sh           (Linux)
+run.bat            (Windows)       bash run.sh        (Linux)
 ```
 Both create `.venv` and install `requirements.txt` on first run, then start `python -m q50tb`.
 
@@ -110,8 +110,9 @@ Lower layers never import higher ones, so a change to one page or service stays 
 ## Tests
 
 ```
-.venv/Scripts/python -m pip install -r requirements-dev.txt
-.venv/Scripts/python -m pytest -q tests
+.venv/Scripts/python -m pip install -r requirements-dev.txt      (Linux: .venv/bin/python)
+.venv/Scripts/python -m pytest -q -rs tests
+sudo bash tools/setup_vcan.sh                                    (Linux, optional: vcan0/vcan1 for the SocketCAN tests)
 ```
 Covers the AV handshake/settings/fragmentation against a virtual meter, monitor-mode never transmitting,
 ownership/protected IDs, the whole API headless, codecs, and capture round trips.
