@@ -54,7 +54,9 @@ class ConnectionBar(QFrame):
         self.fd.setChecked(ctx.settings.fd)
         self.monitor = QCheckBox("MONITORING MODE ONLY")
         self.monitor.setToolTip("Listen-only: the adapter neither transmits nor acknowledges frames. "
-                                "Use this on a real vehicle.")
+                                "Use this on a real vehicle. Adapters without hardware listen-only are refused, "
+                                "unless Settings allows software-only monitoring: then nothing is sent, but the "
+                                "adapter still acknowledges frames.")
         self.monitor.setStyleSheet("QCheckBox { color: #ff5252; font-weight: bold; }")
         self.monitor.setChecked(ctx.settings.monitor_mode)
         self.start = QPushButton("Start bus")
@@ -159,7 +161,7 @@ class MainWindow(QMainWindow):
     def __init__(self, ctx):
         super().__init__()
         self.ctx = ctx
-        self.setWindowTitle("Q50 TestBench — Infiniti Q50 combination meter")
+        self.setWindowTitle("Infiniti Q50 Combination Meter Testbench")
         self.resize(1500, 950)
         self.bridge = Bridge()
         self.bridge.changed.connect(self._bridge)

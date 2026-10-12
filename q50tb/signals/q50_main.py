@@ -464,6 +464,8 @@ BENCH_2026_10_12 = {
     "main.351.STEERING_LOCK_REG_COMPLETE": ("'Steering Lock Registration Complete'", CONFIRMED),
     "main.351.KEY_SYSTEM_ERROR": ("'Key System Error / See Owner's Manual'", CONFIRMED),
     "main.351.AUTO_HIGH_BEAM": ("green auto-high-beam telltale", CONFIRMED),
+    "main.216.DRL_ON": ("meter shows the green parking-light telltale (owner)", None),
+    "main.2B1.FEB_LIGHT": ("amber FEB telltale: two cars with '!' between (owner photo)", None),
     "main.351.LOCK": (NO_EFFECT, None), "main.351.UNLOCK": (NO_EFFECT, None),
     "main.56E.LOCK_CMD": (NO_EFFECT, None), "main.56E.UNLOCK_CMD": (NO_EFFECT, None),
     "main.56E.UNKNOWN_B0_7": (NO_EFFECT, None), "main.56E.UNKNOWN_B0_6": (NO_EFFECT, None),

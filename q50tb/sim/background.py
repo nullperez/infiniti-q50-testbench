@@ -26,6 +26,10 @@ from q50tb.signals.model import SignalDatabase
 OWNER = "background"
 
 
+class TxGated(RuntimeError):
+    """Refused: monitoring mode gates all background transmission."""
+
+
 @dataclass
 class CounterRule:
     byte: int
@@ -213,6 +217,10 @@ class BackgroundManager:
         self.paused = False
         self.version = 0          # bumps on every signal/profile change (UI resync)
         self.listeners: list[Callable[[], None]] = []
+        # monitoring mode: every message is off and cannot be enabled; the bench-mode enabled states are kept
+        # here and restored when monitoring ends
+        self.gated = False
+        self._saved_enabled: dict[tuple[str, int], bool] = {}
         buses.add_state_listener(self._on_bus_state)
 
     # ── profile I/O ─────────────────────────────────────────────────
@@ -226,6 +234,8 @@ class BackgroundManager:
                 self.messages = {}
             for m in msgs:
                 self.messages[m.key] = m
+                if self.gated:
+                    self._saved_enabled[m.key], m.enabled = m.enabled, False
             self.profile_name = data.get("name", path)
             self.profile_path = path
         self._sync()
@@ -235,7 +245,7 @@ class BackgroundManager:
     def save_profile(self, path: str, name: Optional[str] = None) -> None:
         with self._lock:
             data = {"name": name or self.profile_name or "profile", "format": "q50tb-background-1",
-                    "messages": [m.to_json() for m in sorted(self.messages.values(), key=lambda m: (m.bus, m.arbitration_id))]}
+                    "messages": [self._json(m) for m in sorted(self.messages.values(), key=lambda m: (m.bus, m.arbitration_id))]}
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=1)
 
@@ -258,8 +268,37 @@ class BackgroundManager:
                 self._changed()
             return msg
 
+    def _json(self, m: BackgroundMessage) -> dict:
+        d = m.to_json()
+        if self.gated:  # save the bench-mode state, not the monitoring-mode 'off'
+            d["enabled"] = self._saved_enabled.get(m.key, m.enabled)
+        return d
+
+    def _refuse_if_gated(self, on: bool) -> None:
+        if on and self.gated:
+            raise TxGated("monitoring mode: background messages are off and cannot be enabled")
+
+    def set_gate(self, on: bool) -> None:
+        """Monitoring mode on: switch every message off (remembering its state). Off: restore those states."""
+        with self._lock:
+            if on == self.gated:
+                return
+            if on:
+                self._saved_enabled = {k: m.enabled for k, m in self.messages.items()}
+                for m in self.messages.values():
+                    m.enabled = False
+            else:
+                for k, m in self.messages.items():
+                    m.enabled = self._saved_enabled.get(k, m.enabled)
+                self._saved_enabled = {}
+            self.gated = on
+        self._sync()
+        self._changed()
+
     def add(self, msg: BackgroundMessage) -> None:
         with self._lock:
+            if self.gated:
+                self._saved_enabled[msg.key], msg.enabled = msg.enabled, False
             self.messages[msg.key] = msg
         self._sync()
         self._changed()
@@ -271,6 +310,7 @@ class BackgroundManager:
         self._changed()
 
     def set_enabled(self, bus: str, cid: int, on: bool) -> None:
+        self._refuse_if_gated(on)
         msg = self.messages.get((bus, cid))
         if msg:
             msg.enabled = on
@@ -278,6 +318,7 @@ class BackgroundManager:
             self._changed()
 
     def set_all_enabled(self, on: bool, bus: Optional[str] = None) -> None:
+        self._refuse_if_gated(on)
         for m in self.messages.values():
             if bus is None or m.bus == bus:
                 m.enabled = on
@@ -364,6 +405,7 @@ class BackgroundManager:
 
     # ── scheduling ──────────────────────────────────────────────────
     def _on_bus_state(self) -> None:
+        self.set_gate(self.buses.running and self.buses.monitor_only)
         self._sync()
 
     def _stop_all(self) -> None:

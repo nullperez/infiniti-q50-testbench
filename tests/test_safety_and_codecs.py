@@ -55,6 +55,29 @@ def test_monitor_mode_never_transmits():
         ctx.shutdown()
 
 
+def test_monitor_mode_gates_background_messages():
+    ctx = AppContext(AppSettings())
+    api = BenchAPI(ctx)
+    bg = ctx.background
+    try:
+        before = {k: m.enabled for k, m in bg.messages.items()}
+        assert any(before.values())
+        api.start_buses(main="virtual:gate-main", monitor=True)
+        assert bg.gated and not any(m.enabled for m in bg.messages.values())
+        for call in (lambda: api.background_enable_all(True), lambda: api.background_enable("0x180", True)):
+            try:
+                call()
+                raise AssertionError("enabling a background message in monitoring mode was not refused")
+            except Exception as exc:
+                assert "monitoring mode" in str(exc)
+        api.background_enable("0x180", False)  # turning off is still allowed
+        assert not any(m.enabled for m in bg.messages.values())
+        api.stop_buses()
+        assert not bg.gated and {k: m.enabled for k, m in bg.messages.items()} == before
+    finally:
+        ctx.shutdown()
+
+
 def test_ownership_and_protected():
     bm = BusManager()
     bm.start({"main": AdapterInfo("virtual", "own", "v", supports_listen_only=True, is_virtual=True)},

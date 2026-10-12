@@ -7,14 +7,18 @@ is being commanded even when the meter does not echo it.
 
 from __future__ import annotations
 
+import time
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QSlider,
                                QVBoxLayout, QWidget)
 
-from q50tb.signals.dashboard import INDICATORS, Dashboard
+from q50tb.signals.dashboard import INDICATORS, TELLTALE_PATHS, TELLTALES, Dashboard
 from q50tb.ui.pages.base import BasePage
 from q50tb.ui.widgets.common import Led, row
 from q50tb.ui.widgets.gauge import Bar, CarTopView, Gauge, SteeringWheel
+from q50tb.ui.widgets.lcd import LcdDisplay
+from q50tb.ui.widgets.telltales import BLINK_HZ, TelltaleIcon
 
 DARK = "QWidget#cluster { background: #0b0f13; } QLabel { color: #e8eef2; } QGroupBox { color: #9aa5ae; }"
 
@@ -31,7 +35,7 @@ class DashboardPage(BasePage):
 
     def __init__(self, ctx, bridge, parent=None):
         super().__init__(ctx, bridge, parent)
-        self.dash = Dashboard(ctx.vehicle, ctx.sniffer, ctx.settings.dashboard_units)
+        self.dash = Dashboard(ctx.vehicle, ctx.sniffer, ctx.settings.dashboard_units, bench_inputs=ctx.bench.states)
         lay = QVBoxLayout(self.body)
         lay.setContentsMargins(0, 0, 0, 0)
         self.source = QComboBox()
@@ -62,13 +66,10 @@ class DashboardPage(BasePage):
         center = QVBoxLayout()
         self.gear = _big("—", 54)
         self.drive_mode = _big("", 16)
-        self.key_prompt = QLabel("")
-        self.key_prompt.setAlignment(Qt.AlignCenter)
-        self.key_prompt.setWordWrap(True)
-        self.key_prompt.setStyleSheet("font-size: 14px; color: #ffcc80;")
+        self.lcd = LcdDisplay()
         center.addWidget(self.gear)
         center.addWidget(self.drive_mode)
-        center.addWidget(self.key_prompt)
+        center.addWidget(self.lcd, 2)
         info = QGroupBox("Driver information")
         fi = QFormLayout(info)
         self.cruise = QLabel()
@@ -122,16 +123,35 @@ class DashboardPage(BasePage):
         cl.addLayout(side, 2)
         lay.addWidget(cluster, 1)
 
-        tt = QGroupBox("Telltales / warnings (grey = no data / stale)")
+        strip = QWidget()
+        strip.setObjectName("cluster")
+        strip.setStyleSheet(DARK)
+        sg = QGridLayout(strip)
+        sg.setHorizontalSpacing(10)
+        self.icons = {}
+        middle = [t for t in TELLTALES if t.key not in ("left_turn", "right_turn")]
+        per_row = (len(middle) + 1) // 2
+        for i, t in enumerate(middle):
+            self.icons[t.key] = TelltaleIcon(t.key, t.color, t.label)
+            sg.addWidget(self.icons[t.key], i // per_row, 1 + i % per_row, Qt.AlignCenter)
+        for t in TELLTALES:  # turn arrows on the outer edges, spanning both rows
+            if t.key in ("left_turn", "right_turn"):
+                self.icons[t.key] = TelltaleIcon(t.key, t.color, t.label, 56)
+                sg.addWidget(self.icons[t.key], 0, 0 if t.key == "left_turn" else per_row + 1, 2, 1, Qt.AlignCenter)
+        lay.addWidget(strip)
+
+        tt = QGroupBox("Other indicators (grey = no data / stale; icon tooltips name each telltale)")
         tg = QGridLayout(tt)
         self.leds = {}
-        for i, (key, path, label, color) in enumerate(INDICATORS):
+        others = [ind for ind in INDICATORS if ind[1] not in TELLTALE_PATHS]
+        for i, (key, path, label, color) in enumerate(others):
             led = Led(color, 16)
             lab = QLabel(label)
             lab.setToolTip(path)
             tg.addWidget(led, i // 6, (i % 6) * 2)
             tg.addWidget(lab, i // 6, (i % 6) * 2 + 1)
             self.leds[key] = led
+        self.led_paths = {key: path for key, path, _l, _c in others}
         lay.addWidget(tt)
 
     def _source_changed(self, _i) -> None:
@@ -172,11 +192,14 @@ class DashboardPage(BasePage):
         self.fuel.set_value(f.value, f.stale, f"{f.value:.0f}%" if f.value is not None else "")
         g = d.r("main.421.GEAR")
         self.gear.setText(g.text if g.value is not None else "—")
-        self.gear.setStyleSheet(f"font-size: 54px; font-weight: bold; color: {'#6b6b6b' if g.stale else '#e8eef2'};")
+        fg = d.r("main.421.FLASH_GEAR")
+        # FLASH_GEAR: the meter blinks the gear digit (bench 2026-10-12)
+        hidden = fg.valid and bool(fg.value) and int(time.monotonic() * BLINK_HZ * 2) % 2
+        color = "transparent" if hidden else ("#6b6b6b" if g.stale else "#e8eef2")
+        self.gear.setStyleSheet(f"font-size: 54px; font-weight: bold; color: {color};")
         dm = d.r("main.56C.DRIVE_MODE")
         self.drive_mode.setText(dm.text if dm.value is not None else "")
-        kp = d.r("main.351.KEY_PROMPT")
-        self.key_prompt.setText("" if kp.value in (None, 0) else f"🔑 {kp.text}")
+        self.lcd.set_messages(d.lcd_messages())
         cc = d.r("main.2B1.CRUISE_CONTROL")
         ccs = d.r("main.2B1.CC_SPEED")
         cce = d.r("main.2B1.CC_ENABLED")
@@ -217,9 +240,11 @@ class DashboardPage(BasePage):
             self.steer_lbl.setText(f"{st.value:+.1f}°{' (stale)' if st.stale else ''}")
         else:
             self.steer_lbl.setText("steering: no data")
-        for key, path, _l, _c in INDICATORS:
-            rr = d.r(path)
-            self.leds[key].set_state(None if rr.value is None or rr.stale else bool(rr.value))
+        for t in TELLTALES:
+            self.icons[t.key].set_state(*d.telltale(t))
+        for key, led in self.leds.items():
+            rr = d.r(self.led_paths[key])
+            led.set_state(None if rr.value is None or rr.stale else bool(rr.value))
         av = d.av()
         if "nav" in av:
             n = av["nav"]

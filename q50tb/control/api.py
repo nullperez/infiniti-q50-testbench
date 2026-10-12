@@ -110,6 +110,7 @@ def _wait_done(start, timeout: float = 5.0) -> dict:
 class BenchAPI:
     def __init__(self, ctx):
         self.ctx = ctx
+        self._dash: Optional[Dashboard] = None
 
     def call(self, name: str, args: Optional[dict] = None) -> Any:
         if name not in TOOLS:
@@ -149,7 +150,7 @@ class BenchAPI:
                            "tx_errors": ch.stats.tx_errors, "last_error": ch.stats.last_error or ch.adapter.stats.last_error}
         bg = c.background
         return {"running": c.buses.running, "monitor_mode": c.buses.monitor_only, "buses": buses,
-                "background": {"profile": bg.profile_name, "paused": bg.paused, "messages": len(bg.messages),
+                "background": {"profile": bg.profile_name, "paused": bg.paused, "gated_by_monitor_mode": bg.gated, "messages": len(bg.messages),
                                "enabled": sum(m.enabled for m in bg.messages.values())},
                 "av": {"running": c.hu.running, "channels": {k: v["state"] for k, v in c.hu.status()["channels"].items()}},
                 "bench": {"connected": c.bench.connected, "port": c.bench.port},
@@ -273,8 +274,13 @@ class BenchAPI:
 
     @tool
     def get_dashboard(self) -> dict:
-        """Everything the virtual cluster shows (gauges, telltales, doors, TPMS, ADAS, AV nav/audio)."""
-        return Dashboard(self.ctx.vehicle, self.ctx.sniffer, self.ctx.settings.dashboard_units).summary()
+        """Everything the virtual cluster shows (gauges, telltales, centre-display messages, doors, TPMS, ADAS,
+        AV nav/audio)."""
+        # kept between calls: telltale hold bits and the headlight-error latch need the previous state
+        if self._dash is None:
+            self._dash = Dashboard(self.ctx.vehicle, self.ctx.sniffer, bench_inputs=self.ctx.bench.states)
+        self._dash.units = self.ctx.settings.dashboard_units
+        return self._dash.summary()
 
     # ── background messages ─────────────────────────────────────────
     @tool

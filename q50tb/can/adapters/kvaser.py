@@ -39,9 +39,20 @@ def available() -> bool:
         return False
 
 
+# Kvaser channels currently open. CANlib keeps the channel list it built at load
+# time, so hot-plugged devices need enumerate_hardware(); that can renumber
+# channels, so it is skipped while any channel is open.
+_open_count = 0
+
+
 def discover() -> list[AdapterInfo]:
     if not available():
         return []
+    if _open_count == 0:
+        try:
+            canlib.enumerate_hardware()
+        except Exception:
+            pass
     out = []
     for i in range(canlib.getNumberOfChannels()):
         try:
@@ -121,6 +132,8 @@ class KvaserAdapter(Adapter):
             except Exception:
                 pass
             raise
+        global _open_count
+        _open_count += 1
         self._ch = ch
         self._ts_offset = None
         self.stats.bus_state = "listen-only" if config.listen_only else "error-active"
@@ -128,6 +141,8 @@ class KvaserAdapter(Adapter):
     def _close(self) -> None:
         ch, self._ch = self._ch, None
         if ch is not None:
+            global _open_count
+            _open_count -= 1
             try:
                 ch.busOff()
             finally:

@@ -35,6 +35,15 @@ class BasePage(QWidget):
     def on_bus_state(self) -> None:
         mon = self.ctx.buses.running and self.ctx.buses.monitor_only
         if self.tx_page:
+            if mon:
+                # software-only monitoring (adapter without hardware listen-only): the app sends nothing, but the
+                # adapter's controller still ACKs frames
+                soft = [ch.role for ch in self.ctx.buses.channels.values() if not ch.config.listen_only]
+                self._monitor_banner.setText(
+                    "MONITORING MODE - this page transmits and is disabled. Nothing is sent on the bus; "
+                    f"the {'/'.join(soft)} adapter still acknowledges frames (software-only monitoring)." if soft else
+                    "MONITORING MODE - this page transmits and is disabled. "
+                    "Nothing is sent or acknowledged on the bus.")
             self._monitor_banner.setVisible(mon)
             self.body.setEnabled(not mon)
 

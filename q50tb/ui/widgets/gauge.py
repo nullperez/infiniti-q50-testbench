@@ -6,7 +6,7 @@ import math
 from typing import Optional
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 BG = QColor("#101418")
@@ -181,16 +181,24 @@ class CarTopView(QWidget):
         p.drawRoundedRect(QRectF(58, 60, 54, 30), 6, 6)
         p.drawRoundedRect(QRectF(58, 150, 54, 22), 6, 6)
 
-        def door(name, rect):
+        def color(name):
             st = self.doors.get(name)
-            col = QColor("#555") if st is None else (QColor("#e53935") if st else QColor("#2e7d32"))
-            p.setPen(QPen(col, 4))
-            p.drawLine(rect[0], rect[1])
-        door("Driver", (QPointF(50, 95), QPointF(50, 128)))
-        door("Passenger", (QPointF(120, 95), QPointF(120, 128)))
-        door("Rear driver", (QPointF(50, 132), QPointF(50, 160)))
-        door("Rear passenger", (QPointF(120, 132), QPointF(120, 160)))
-        door("Trunk", (QPointF(65, 210), QPointF(105, 210)))
+            return QColor("#555") if st is None else (QColor("#e53935") if st else QColor("#2e7d32"))
+
+        def door(name, x, y, length, side):
+            """Hinge at the front end (x, y); an open door swings 40° outward (side -1 left, +1 right)."""
+            p.setPen(_pen(color(name), 4, Qt.RoundCap))
+            a = math.radians(40 if self.doors.get(name) else 0)
+            p.drawLine(QPointF(x, y), QPointF(x + side * length * math.sin(a), y + length * math.cos(a)))
+        door("Driver", 50, 89, 33, -1)
+        door("Passenger", 120, 89, 33, 1)
+        door("Rear driver", 50, 126, 28, -1)
+        door("Rear passenger", 120, 126, 28, 1)
+        p.setPen(_pen(color("Trunk"), 4, Qt.RoundCap))
+        if self.doors.get("Trunk"):  # lid raised: drawn behind the car, joined to the body
+            p.drawPolyline(QPolygonF([QPointF(65, 208), QPointF(65, 218), QPointF(105, 218), QPointF(105, 208)]))
+        else:
+            p.drawLine(QPointF(65, 210), QPointF(105, 210))
         f = QFont()
         f.setPointSizeF(8)
         p.setFont(f)

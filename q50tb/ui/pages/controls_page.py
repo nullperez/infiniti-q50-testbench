@@ -139,6 +139,21 @@ class ControlsPage(BasePage):
         self._gear_group.idClicked.connect(lambda raw: self.b._set_raw("main.421.GEAR", raw))
         self.manual.currentIndexChanged.connect(
             lambda _i: self.manual.currentData() is not None and self.b._set_raw("main.421.GEAR", self.manual.currentData()))
+
+        def sync_gear():
+            # show the gear the background is sending (the captured idle sends P)
+            val = self.b.current("main.421.GEAR")
+            raw = None if val is None else int(val)
+            rb = self._gear_group.button(raw) if raw is not None else None
+            self._gear_group.setExclusive(False)
+            for b in self._gear_group.buttons():
+                with blocked(b):
+                    b.setChecked(b is rb)
+            self._gear_group.setExclusive(True)
+            with blocked(self.manual):
+                self.manual.setCurrentIndex(max(0, self.manual.findData(raw)) if raw is not None else 0)
+        self.b._bound.append(("main.421.GEAR", g, sync_gear))
+        sync_gear()
         v.addWidget(g)
         f = QFormLayout()
         f.addRow("All gear codes", self.b.combo("main.421.GEAR"))
@@ -216,7 +231,8 @@ class ControlsPage(BasePage):
         f.addRow("TPMS telltale (0x358)", b.checkbox("main.358.TPMS_LIGHT"))
         f.addRow("Loose fuel cap", b.checkbox("main.580.LOOSE_FUEL_CAP"))
         f.addRow("Key system error", b.checkbox("main.351.KEY_SYSTEM_ERROR"))
-        f.addRow("Chassis error (0x56C B0.1)", row(b.checkbox("main.56C.CHASSIS_ERROR"), confidence_badge("candidate")))
+        f.addRow("Chassis error (0x56C B0.1)", row(b.checkbox("main.56C.CHASSIS_ERROR"),
+                                                   confidence_badge(b.sdef("main.56C.CHASSIS_ERROR").confidence)))
         f.addRow("TCS / slip (0x354)", b.combo("main.354.TCS_STATE"))
         v.addLayout(f)
         abs_box = QGroupBox("ABS / BRAKE (0x354 byte 4) - lamp + hold bits")
@@ -358,6 +374,7 @@ class ControlsPage(BasePage):
         g.addWidget(b.checkbox("main.56C.TRACE_SADDLE_CURVE", "Trace: saddle curve"), 3, 1)
         g.addWidget(b.checkbox("main.56C.QUAD_BEEP", "Quad beep"), 4, 0)
         g.addWidget(b.checkbox("main.56C.CONTINUOUS_BEEP", "Continuous beep"), 4, 1)
+        g.addWidget(b.checkbox("main.56C.CHASSIS_ERROR", "'Chassis Control System Error' (B0.1)"), 5, 0, 1, 2)
         v.addWidget(ch)
         fo = QGroupBox("Forces (0x292) - units not established")
         f3 = QFormLayout(fo)
