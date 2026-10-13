@@ -90,6 +90,13 @@ class BenchIO:
         ms = int(ms or self.press_ms)
         return self._run(lambda: self.client.press(name, ms), wait, 3.0, f"PRESS {name} {ms}")
 
+    def hold(self, name: str, on: bool, wait: bool = False):
+        """Hold a button down (SET 1) until hold(name, False); the firmware releases it after 10 s at most."""
+        name = ALIASES.get(name, name)
+        if KIND_OF.get(name) != BUTTON:
+            raise BenchError(f"{name} is not a momentary button; use set()")
+        return self._run(lambda: self.client.set(name, on), wait, 3.0, f"{'HOLD' if on else 'RELEASE'} {name}")
+
     def all_off(self, wait: bool = False):
         return self._run(lambda: self.client.all_off(), wait, 3.0, "ALLOFF")
 

@@ -264,12 +264,12 @@ def test_engine_off_sets_stopped_flags_and_back():
         ctx.set_engine_running(False)
         assert not ctx.engine_running()
         assert payload(0x160)[0] & 0x08 and not payload(0x160)[6] & 0x08
-        assert payload(0x182)[5] & 0x20 and not payload(0x300)[0] & 0x02 and not payload(0x580)[7] & 0x20
+        assert payload(0x182)[5] & 0x20 and payload(0x300)[0] == 0 and not payload(0x580)[7] & 0x20
         assert payload(0x180)[0:2] == bytes(2) and payload(0x3EC)[0:2] == bytes(2)
         assert payload(0x551)[3] == idle[0x551][3]          # ignition-ready bit untouched
         ctx.set_engine_running(True)
         assert ctx.engine_running()
-        for cid, byte, mask in ((0x160, 0, 0x08), (0x160, 6, 0x08), (0x182, 5, 0x20), (0x300, 0, 0x02), (0x580, 7, 0x20)):
+        for cid, byte, mask in ((0x160, 0, 0x08), (0x160, 6, 0x08), (0x182, 5, 0x20), (0x300, 0, 0xFF), (0x580, 7, 0x20)):
             assert payload(cid)[byte] & mask == idle[cid][byte] & mask
     finally:
         ctx.shutdown()

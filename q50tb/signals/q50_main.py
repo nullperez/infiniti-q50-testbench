@@ -84,6 +84,13 @@ def _messages() -> list[MessageDef]:
               notes="observed: B7 = XOR of all nibbles of B0..B6 (captures)."),
     ]))
 
+    m.append(MessageDef(0x02A, "SCM status", dlc=6, period_ms=100, signals=[
+        bit("SCM_SYSTEM_ERROR", 4, 0, confidence=CONFIRMED, label="SCM system error",
+            notes="bench sweep 2026-10-12 (camera): '! Warning / SCM system error / Visit dealer' + amber master "
+                  "warning; clears with the bit. Other bits of byte 4 and 0xFF/0x00 in bytes 0-3, 5 showed "
+                  "nothing; stopping 0x02A for 10 s showed nothing."),
+    ]))
+
     m.append(MessageDef(0x160, "Accelerator Pedal", period_ms=10, signals=[
         bit("PEDAL_FULLY_PRESSED", 0, 6, confidence=CANDIDATE),
         bit("ENGINE_STOPPED", 0, 3, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 1 off, 0 running with the engine, one change at start and stop)"),
@@ -102,18 +109,61 @@ def _messages() -> list[MessageDef]:
     ]))
 
     m.append(MessageDef(0x182, "Engine 2", period_ms=10, signals=[
+        bit("COAST_CAND", 1, 7, confidence=CANDIDATE, label="Coasting (pedal released while moving)",
+            notes="captures: set only while moving with the accelerator released (2931 of 2983 samples moving); "
+                  "deceleration fuel cut?"),
+        byte_("THROTTLE_CAND", 4, confidence=CANDIDATE, label="Throttle-like value",
+              notes="captures: follows the accelerator (r 0.94 vs 0x180 B5), 0xFF at full throttle; not calibrated"),
         field("COUNTER", 5, 3, 0, control="readonly"),
         bit("ENGINE_STOPPED", 5, 5, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 1 off, 0 running with the engine, one change at start and stop)"),
         bit("BRAKE_PRESSED", 6, 6, label="Brake pressed"),
     ]))
 
-    m.append(MessageDef(0x176, "Engine RPM (1 rpm/bit)", dlc=7, signals=[
+    m.append(MessageDef(0x174, "Transmission (gear / shift)", period_ms=10, signals=[
+        byte_("SHIFT_TORQUE_CAND", 0, confidence=CANDIDATE, label="Shift request value",
+              notes="captures: 0xFF except during gear changes (100% of activity within 0.5 s of a shift); "
+                    "torque reduction request?"),
+        field("GEAR_ACTUAL", 3, 7, 4, enum={**{g: str(g) for g in range(1, 8)}, 9: "R", 10: "P/N"},
+              confidence=PROBABLE, label="Transmission gear (actual)",
+              notes="captures: P/N -> 0xA, R -> 0x9, D -> 1..7 (7-speed AT), M2..M5 -> 2..5"),
+        field("GEAR_TARGET", 3, 3, 0, enum={**{g: str(g) for g in range(1, 8)}, 9: "R", 10: "P/N"},
+              confidence=PROBABLE, label="Transmission gear (target)",
+              notes="captures: differs from GEAR_ACTUAL only during a shift (e.g. 0x34 = 3 -> 4)"),
+        field("COUNTER", 4, 3, 0, control="readonly", confidence=PROBABLE),
+        field("SHIFT_MODE", 5, 3, 2, enum={0: "Standard", 1: "Eco", 2: "Sport", 3: "Snow"}, confidence=PROBABLE,
+              notes="captures: follows the 0x56C drive mode (Personal shows its configured mode)"),
+        bit("LOCKUP_CAND", 5, 7, confidence=CANDIDATE, label="Torque-converter lock-up?",
+            notes="captures: set mostly when engine rpm and 0x176 turbine speed are within 30 rpm"),
+    ], notes="Capture analysis 2026-10-12. No visible meter effect (bench, B3 and B5 overridden)."))
+
+    m.append(MessageDef(0x176, "Transmission speeds", dlc=7, signals=[
+        S("OUTPUT_SPEED", (Seg(0, 3, 0), Seg(1)), confidence=PROBABLE, label="Output-shaft speed (raw)",
+          notes="captures: 23.77 x vehicle km/h (r 1.000), i.e. ~driveshaft rpm; 12-bit"),
         S("ENGINE_RPM", be16(2), unit="rpm", minimum=0, maximum=8000, confidence=PROBABLE,
           label="Engine RPM (0x176)", notes="tracks 0x180 through engine start in mainbus_startup; "
-          "changing it alone did not move the tach (bench 2026-10-12). Linked to 0x180."),
+          "changing it alone did not move the tach (bench 2026-10-12). Linked to 0x180. Driving captures: "
+          "reads 0 while stopped in gear at idle and below engine rpm at low speed, so it behaves as the "
+          "transmission input (turbine) speed."),
+        field("COUNTER", 6, 3, 0, control="readonly", confidence=PROBABLE),
+    ]))
+
+    m.append(MessageDef(0x177, "Transmission status", period_ms=10, signals=[
+        bit("PARK", 1, 4, confidence=PROBABLE, label="In P", notes="captures: 1 in P, 0 in R/D/M"),
+        bit("MANUAL_MODE", 1, 7, confidence=PROBABLE, label="Manual mode", notes="captures: 1 exactly in M1..M7"),
+        byte_("SHIFT_ACTIVE_CAND", 4, confidence=CANDIDATE,
+              notes="captures: 0 except during gear changes (100% within 0.5 s of a shift)"),
+    ], notes="Capture analysis 2026-10-12. B1 overridden on the bench: no visible meter effect."))
+
+    m.append(MessageDef(0x1C3, "Unresolved 0x1C3", period_ms=10, signals=[
+        field("COUNTER", 5, 1, 0, control="readonly", confidence=PROBABLE),
+        byte_("CHECKSUM", 7, control="readonly", confidence=PROBABLE,
+              notes="captures: B7 = (sum(B0..B6) + 0xC4) & 0xFF (100%)"),
     ]))
 
     m.append(MessageDef(0x1F9, "Engine RPM copy", period_ms=10, signals=[
+        field("ENGINE_STATE", 0, 5, 3, enum={0: "Off (IG off)", 2: "IG on, stopped", 4: "Running",
+                                            5: "Running (settled)", 6: "Cranking"},
+              confidence=PROBABLE, notes="captures: same states as 0x551 B5[1:0]; 6 matches START_STATE cranking"),
         S("ENGINE_RPM", be16(2), factor=0.125, unit="rpm", minimum=0, maximum=8000, confidence=DOCUMENTED,
           label="Engine RPM (0x1F9)", notes="same raw as 0x180 bytes 0-1 frame for frame in captures. Linked to 0x180."),
     ]))
@@ -129,11 +179,17 @@ def _messages() -> list[MessageDef]:
         "(car forgets it is AWD). Payload not decoded.")))
 
     m.append(MessageDef(0x216, "BCM lights", dlc=3, period_ms=20, signals=[
-        field("WIPER_STATE", 0, 7, 5, confidence=CANDIDATE),
+        field("WIPER_STATE", 0, 7, 6, confidence=CANDIDATE,
+              notes="was B0[7:5]; bit 5 is the hood (captures). Real car: bit 6 always 1, bit 7 always 0"),
+        bit("HOOD_OPEN", 0, 5, confidence=CANDIDATE, label="Hood open",
+            notes="captures: set 5.6-23.7 s in '5seconds_open_hood_25_close', never elsewhere; "
+                  "no visible meter effect (bench)"),
         field("OP_STATE", 0, 2, 0, confidence=CANDIDATE),
         bit("DRL_ON", 1, 6, label="DRL on"),
         bit("HEADLIGHTS", 1, 5),
-        bit("FOG_LIGHTS", 1, 3),
+        bit("FOG_LIGHTS", 1, 3, confidence=CANDIDATE,
+            notes="README: fog lights. Real-car captures: 1 in P and 0 in R/D/M in all 42 captures with P, "
+                  "so on the car it behaves like a P/N position signal"),
         byte_("CHECKSUM", 2, control="readonly", confidence=CANDIDATE,
               notes="observed: last byte = (B0+B1+0x72) & 0xFF in idle capture"),
     ]))
@@ -148,7 +204,16 @@ def _messages() -> list[MessageDef]:
         bit("IG_READY", 4, 6, confidence=CANDIDATE,
             notes="follows the ignition, not the engine: on for the whole IG-on/engine-off capture "
                   "(BENCHMETER_MAINBUS_STARTUP), cleared right after IG off; already set in remote-start captures"),
+        byte_("ACCEL_POSITION", 5, factor=0.5, unit="%", minimum=0, maximum=100, confidence=PROBABLE,
+              label="Accelerator position (0x239)", notes="captures: equals 0x180 B5 raw (r 0.9997)"),
     ]))
+
+    m.append(MessageDef(0x245, "Unresolved 0x245", period_ms=20, signals=[
+        bit("TCS_OFF", 3, 0, confidence=PROBABLE, label="TCS/VDC off",
+            notes="captures: 1 exactly while 0x354 TCS_STATE = 2 (TCS OFF), 5 captures; no visible meter effect"),
+        byte_("COUNTER", 4, control="readonly", confidence=PROBABLE),
+        field("COUNTER2", 7, 1, 0, control="readonly", confidence=PROBABLE),
+    ], notes="B1/B2 go to 0xFF while cranking (sensor data invalid)."))
 
     m.append(MessageDef(0x280, "Cluster Status 1 (meter)", sender="meter", period_ms=20, signals=[
         bit("DRIVER_UNBUCKLED", 0, 1, label="Driver unbuckled"),
@@ -172,18 +237,45 @@ def _messages() -> list[MessageDef]:
     m.append(MessageDef(0x285, "Rear wheel speeds", period_ms=20, signals=[
         S("RR_WHEEL_SPEED", be16(0), factor=0.005, unit="km/h", minimum=0, maximum=300),
         S("RL_WHEEL_SPEED", be16(2), factor=0.005, unit="km/h", minimum=0, maximum=300),
+        byte_("VEHICLE_SPEED_KMH", 4, unit="km/h", confidence=PROBABLE, label="Vehicle speed (whole km/h)",
+              notes="captures: floor of 0x354 vehicle speed (r 0.9999, 94% exact)"),
         byte_("COUNTER", 6, control="readonly"),
         byte_("CHECKSUM", 7, control="readonly", confidence=PROBABLE,
               notes="observed: B7 = (sum(B0..B6) + 0x87) & 0xFF"),
     ]))
 
+    m.append(MessageDef(0x286, "Unresolved 0x286", dlc=2, period_ms=20, signals=[
+        byte_("SPEED_DEPENDENT_CAND", 0, confidence=CANDIDATE,
+              notes="captures: rises with speed (~3 x km/h + 32) and saturates at ~0xED above ~65 km/h"),
+        field("COUNTER", 1, 7, 6, control="readonly", confidence=PROBABLE),
+    ]))
+
     m.append(MessageDef(0x292, "Forces", period_ms=20, signals=[
-        S("LONG_ACCEL", (Seg(0), Seg(1, 7, 4)), factor=0.001, confidence=CANDIDATE,
-          notes="signedness/offset and units not established"),
-        S("LAT_ACCEL", (Seg(1, 3, 0), Seg(2)), factor=0.001, confidence=CANDIDATE),
-        S("YAW_RATE", (Seg(3), Seg(4, 7, 4)), factor=0.1, confidence=CANDIDATE),
+        S("LONG_ACCEL", (Seg(0), Seg(1, 7, 4)), factor=0.001, offset=-2.048, unit="g", minimum=-2.048, maximum=2.047,
+          confidence=PROBABLE, notes="captures: offset binary (0x800 = 0), ~0.001 g/bit (fit vs wheel-speed "
+          "derivative r 0.93); + = accelerating; 0xFFF before the sensor is ready"),
+        S("LAT_ACCEL", (Seg(1, 3, 0), Seg(2)), factor=0.001, offset=-2.048, unit="g", minimum=-2.048, maximum=2.047,
+          confidence=PROBABLE, notes="captures: offset binary (0x800 = 0), ~0.001 g/bit (fit vs speed x yaw "
+          "r 0.92); + = turning left"),
+        S("YAW_RATE", (Seg(3), Seg(4, 7, 4)), factor=0.1, offset=-204.8, unit="deg/s", minimum=-204.8,
+          maximum=204.7, confidence=CANDIDATE, notes="captures: offset binary (0x800 = 0), ~0.1 deg/s/bit, "
+          "+ = left; noisier than 0x2AB YAW_RATE (r 0.74 vs rear-wheel yaw)"),
         byte_("BRAKE_PRESSURE", 6, notes="raw, not calibrated"),
         field("COUNTER", 7, 1, 0, control="readonly"),
+    ]))
+
+    m.append(MessageDef(0x2AA, "Unresolved 0x2AA", period_ms=20, signals=[
+        field("COUNTER", 6, 3, 0, control="readonly", confidence=PROBABLE),
+        byte_("CHECKSUM", 7, control="readonly", confidence=PROBABLE,
+              notes="captures: B7 = (sum(B0..B6) + 0xAC) & 0xFF (100%)"),
+    ], notes="B1-B3 change ~1.1 s after IG on (module ready)."))
+
+    m.append(MessageDef(0x2B0, "Unresolved 0x2B0", period_ms=10, signals=[
+        bit("BRAKE_SW_ON", 3, 6, confidence=PROBABLE, label="Brake switch (pressed)",
+            notes="captures: equals 0x182 BRAKE_PRESSED; no visible meter effect"),
+        bit("BRAKE_SW_OFF", 3, 7, confidence=PROBABLE, label="Brake switch (released)",
+            notes="captures: inverse of BRAKE_SW_ON (two-switch brake input; both 0 or 1 briefly at edges)"),
+        field("COUNTER", 6, 7, 4, control="readonly", confidence=PROBABLE),
     ]))
 
     m.append(MessageDef(0x2B1, "ADAS", dlc=6, period_ms=20, signals=[
@@ -260,10 +352,23 @@ def _messages() -> list[MessageDef]:
         bit("TRUNK_OPEN", 2, 0),
         bit("LOW_OIL_PRESSURE", 3, 5, confidence=CONFIRMED, notes="lights red oil lamp + 'Low Oil Pressure / Stop Vehicle' (bench 2026-10-12, 3000 rpm); off at RPM 0"),
         bit("TPMS_LIGHT", 4, 7),
+        bit("BULB_CHECK_CAND", 1, 0, confidence=CANDIDATE,
+            notes="captures: 1 s pulse at IG on together with TPMS_LIGHT; no visible meter effect (bench)"),
+        bit("UNLOCK_EVENT_CAND", 3, 7, confidence=CANDIDATE,
+            notes="captures: 0.3 s pulse at each unlock (with 0x351 UNLOCK and the hazard flash); no visible effect"),
+        field("REMOTE_START_STATE", 5, 7, 5, confidence=CANDIDATE,
+              notes="captures: 0 in normal use; 1-4 only in the two remote-start captures (4 -> 3 at remote "
+                    "start, 0 when the driver takes over); no visible meter effect"),
     ], notes="Missing 0x358 dims illumination and flashes the TPMS lamp."))
 
     m.append(MessageDef(0x35D, "Brake signal", period_ms=100, signals=[
+        bit("IG_ON", 0, 7, confidence=PROBABLE, label="Ignition on",
+            notes="captures: equals 0x60D IG_RUN (2 mismatches in ~55k samples)"),
+        bit("CRANKING", 0, 6, confidence=PROBABLE, label="Starter cranking",
+            notes="captures: set exactly while 0x625 START_STATE = 3 (cranking); no visible meter effect"),
         bit("UNKNOWN_B4_6", 4, 6, confidence=CANDIDATE), bit("BRAKE_PRESSED", 4, 4),
+        field("REMOTE_START_CAND", 7, 7, 4, confidence=CANDIDATE,
+              notes="captures: 5 normally, 0xA while the engine runs on remote start"),
     ]))
 
     tire = []
@@ -348,6 +453,28 @@ def _messages() -> list[MessageDef]:
         bit("STEERING_HEATER", 5, 6),
     ]))
 
+    m.append(MessageDef(0x544, "Vehicle speed (0x544)", dlc=4, period_ms=100, signals=[
+        byte_("VEHICLE_SPEED_KMH", 0, unit="km/h", confidence=PROBABLE, label="Vehicle speed (whole km/h)",
+              notes="captures: tracks 0x354 speed in whole km/h; 0xFF for the first ~10 s (not available)"),
+    ], notes="Frame nibbles XOR to 0 (nibble checksum, 100% of frames). B1 bit 6 / B3 bit 3 change at IG on/off."))
+
+    m.append(MessageDef(0x54C, "HVAC 3 (outside temperature)", period_ms=100, signals=[
+        byte_("TEMP_B0_CAND", 0, confidence=CANDIDATE, label="HVAC temperature-like (B0)",
+              notes="captures: 0xFF at start, settles ~100 with the A/C running, higher after hot soak; scale unknown"),
+        field("BLOWER_OUTPUT", 5, 6, 3, confidence=PROBABLE, label="Blower output level",
+              notes="captures: ramps in 0.5 s steps and rises with 0x54B BLOWER_SPEED (L1 7, L2 8, L3 10-12, "
+                    "L4 13, off 0)"),
+        byte_("TEMP_B7_CAND", 7, confidence=CANDIDATE, label="HVAC temperature-like (B7)",
+              notes="captures: 0xFE until ready, ~180 at idle, drops to ~95-120 driving with A/C; scale unknown"),
+        byte_("OUTSIDE_TEMP", 6, factor=0.5, offset=-41, unit="degC", minimum=-41, maximum=86.5,
+              confidence=CONFIRMED, label="Outside (ambient) temperature",
+              notes="raw = (degC + 41) * 2. Bench 2026-10-12 (camera): B1 -> 118 degF (idle baseline value), "
+                    "20 degC -> 68 degF, -10 degC -> 14 degF, 0xFF -> '--- degF' (not available; also the first "
+                    "frame after engine start in engineonq50). B1-B4 undecoded. Owner 2026-10-12: the "
+                    "meter filters the reading - a decrease shows almost at once, an increase lags (does not "
+                    "follow in real time); rate/delay not measured."),
+    ]))
+
     m.append(MessageDef(0x54D, "HVAC 4 (seat heat)", period_ms=100, signals=[
         bit("DRIVER_SEAT_AUTO", 1, 1), bit("PASSENGER_SEAT_AUTO", 1, 0),
         bit("DRIVER_SEAT_OFF", 5, 2), bit("DRIVER_SEAT_LOW", 5, 1), bit("DRIVER_SEAT_MID", 5, 0),
@@ -367,6 +494,10 @@ def _messages() -> list[MessageDef]:
         byte_("CRUISE_SET_SPEED", 4, unit="mph", label="Cruise set speed", notes="0x33 displayed 51 mph"),
         field("CRUISE_ICON", 5, 7, 4, enum=CRUISE_ICON_551, label="Cruise icon",
               notes="upper-nibble whole-byte masks; interaction with 0x2B1 not isolated"),
+        field("ENGINE_STATE", 5, 1, 0, enum={0: "Off", 1: "IG on, stopped", 2: "Running", 3: "Cranking"},
+              confidence=PROBABLE, notes="captures: same states as 0x1F9 B0[5:3]"),
+        bit("ECO_MODE", 6, 6, confidence=PROBABLE, label="ECO mode active",
+            notes="captures: 1 in Eco (and Personal set to Eco), with 0x174 SHIFT_MODE = Eco; no visible meter effect"),
     ]))
 
     m.append(MessageDef(0x56C, "Chassis control / drive mode", dlc=6, period_ms=100, signals=[
@@ -398,7 +529,14 @@ def _messages() -> list[MessageDef]:
         byte_("OIL_TEMP", 4, offset=-40, unit="degC", confidence=CANDIDATE,
               notes="README 'raw degC + 40' is ambiguous (+40 vs -40)"),
         bit("ECO_LIGHT", 5, 6, label="ECO telltale"),
-        bit("ENGINE_RUNNING", 7, 5, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 0 off, 1 running with the engine, one change at start and stop)"),
+        bit("ENGINE_RUNNING", 7, 5, confidence=CANDIDATE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 0 off, 1 running with the engine, one change at start and stop). Driving captures: B7 is a numeric, load-like value (~0x19 engine off, ~0x3C idle, 0x4B-0x50 cruising, ~0x76 full throttle), so bit 5 only tracks the engine at idle; 0 most of the time while driving"),
+    ]))
+
+    m.append(MessageDef(0x5B0, "Drive mode (0x5B0)", dlc=2, period_ms=100, signals=[
+        byte_("DRIVE_MODE_FLAGS", 0, enum={1: "Sport", 4: "Standard", 16: "Eco", 64: "Snow"}, confidence=PROBABLE,
+              notes="captures: one-hot, follows the 0x56C drive mode (Personal shows its configured mode); "
+                    "no visible meter effect"),
+        field("COUNTER", 1, 7, 6, control="readonly", confidence=PROBABLE),
     ]))
 
     m.append(MessageDef(0x5C5, "Cluster Status 4 (meter)", sender="meter", period_ms=100, signals=[
@@ -423,26 +561,51 @@ def _messages() -> list[MessageDef]:
         bit("WIPER_LOW", 0, 2), bit("WIPERS_NOT_AT_TOP", 0, 1),
         bit("AC_COMPRESSOR_OR_FAN", 1, 7), bit("PARKING_LIGHTS", 1, 6), bit("HEADLIGHT", 1, 5),
         bit("HIGH_BEAM", 1, 4), bit("FOG_LIGHTS", 1, 3), bit("IG_RUN", 3, 4),
+        field("AWAKE_STATE", 3, 1, 0, enum={1: "Awake", 2: "Standby"}, confidence=CANDIDATE,
+              notes="captures: 1 while IG is on and for 4.9 s after each wake event (door, button, unlock), "
+                    "otherwise 2"),
     ]))
 
+    m.append(MessageDef(0x6E2, "Unresolved 0x6E2 (tach gate)", period_ms=100, signals=[
+        field("PAGE", 2, 2, 0, control="readonly", confidence=PROBABLE,
+              notes="captures: B2 = 0x38 + page; pages 0-3 with the engine off, 4-7 running; each page ~400 ms"),
+        byte_("RPM_DIV64_CAND", 3, confidence=CANDIDATE,
+              notes="captures: follows engine rpm (~0x0B idle, 0x43 at 4300 rpm) on pages 4-7"),
+        bit("TACH_ZERO_FLAG", 6, 6, confidence=PROBABLE, label="Tach forced to 0 (meaning unknown)",
+            notes="bench sweep 2026-10-12 (camera): bit set -> tach needle drops from ~700 rpm idle to 0, "
+                  "returns when cleared (5 of 5); no telltale. Other bits of byte 6 do nothing. Meaning "
+                  "(engine-stopped / RPM-invalid?) not established."),
+    ], notes="Multiplexed: B0 = 0x12 and B1 = 0x16 fixed, B5[7:2] steps by 1 per frame (wraps)."))
+
     # Unresolved IDs seen in captures; kept so the UI can label them.
-    m.append(MessageDef(0x2AB, "Unresolved 0x2AB", signals=[
-        S("WHEEL_ANGLE_CAND", be16(2), confidence=CANDIDATE, notes="suggested wheel angle")]))
-    m.append(MessageDef(0x300, "Unresolved 0x300", dlc=1, signals=[
-        byte_("STEER_EFFORT_CAND", 0, confidence=CANDIDATE, notes="suggested steering effort, uncalibrated"),
-        bit("ENGINE_RUNNING", 0, 1, confidence=PROBABLE, notes="engine-state flag (all real-car captures incl. 60 s IG-on/engine-off: 0 off, 1 running with the engine, one change at start and stop)"),
+    m.append(MessageDef(0x2AB, "Chassis 0x2AB (yaw rate)", signals=[
+        S("YAW_RATE", (Seg(0), Seg(1, 7, 4)), factor=-0.0191, signed=True, unit="deg/s", minimum=-39, maximum=39,
+          confidence=PROBABLE, label="Yaw rate (0x2AB)",
+          notes="captures: signed 12-bit, r -0.990 vs yaw from rear wheel speeds (track 1.55 m assumed, so "
+                "factor +-5%); + = turning left"),
+        S("WHEEL_ANGLE_CAND", be16(2), confidence=CANDIDATE,
+          notes="suggested wheel angle; driving captures: B2-B5 look like noise, no correlation with steering")]))
+    m.append(MessageDef(0x300, "Power steering assist", dlc=1, signals=[
+        byte_("STEER_EFFORT_CAND", 0, confidence=PROBABLE, label="Steering assist effort",
+              notes="captures 2026-10-12: unsigned power-steering assist magnitude, uncalibrated. Rises while the "
+                    "wheel turns (~120 at full lock parked), back near 0 when it stops, same sign left and right; "
+                    "falls with speed (mean 46 parked, 16 at 2-10 km/h, 7 at 10-40, ~3 above 40 km/h while "
+                    "steering). 0-1 with the engine off, ~2-3 at idle. Bit 1 was formerly ENGINE_RUNNING: it only "
+                    "looked like a flag in idle captures (while driving 0 in 28940 samples, 1 in 17547)."),
     ]))
     return m
 
 
 # Engine on/off: every flag that follows the engine in the engineonq50 capture, with its value
 # while the engine is off (the idle profile was captured running, so "running" = clear overrides).
-# Checked against every real-car capture: these five hold their engine-off value with IG on and the
+# Checked against every real-car capture: these hold their engine-off value with IG on and the
 # engine stopped (BENCHMETER_MAINBUS_STARTUP: 60 s IG on, RPM 0) and flip only when the engine runs.
+# 0x300 is the steering-assist value (0 with the engine off, ~2-3 at idle); 0x580 B7.5 is part of a
+# load-like value that only behaves as a flag between engine off and idle, which is all the bench needs.
 # 0x551 B3.7 and 0x239 B4.6 follow the ignition instead (IG_READY) and are left alone.
 ENGINE_OFF_STATE = {
     "main.160.ENGINE_STOPPED": 1, "main.160.ENGINE_RUNNING": 0, "main.182.ENGINE_STOPPED": 1,
-    "main.300.ENGINE_RUNNING": 0, "main.580.ENGINE_RUNNING": 0, "main.180.ENGINE_RPM": 0,
+    "main.300.STEER_EFFORT_CAND": 0, "main.580.ENGINE_RUNNING": 0, "main.180.ENGINE_RPM": 0,
 }
 
 # Signals that carry the same physical value in several messages. Setting or clearing

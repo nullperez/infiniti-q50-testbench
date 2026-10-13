@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPlainTextEdit,
-                               QPushButton, QSpinBox, QVBoxLayout, QWidget)
+                               QPushButton, QVBoxLayout, QWidget)
 
 from q50tb.hw.bench_io import KIND_OF, UI_CONTROLS
 from q50tb.hw.esp32_bench import POWER
@@ -49,11 +49,6 @@ class HardwarePage(BasePage):
 
         cl.addWidget(button("Read status", self.io.refresh))
 
-        self.press_ms = QSpinBox()
-        self.press_ms.setRange(20, 10000)
-        self.press_ms.setValue(self.io.press_ms)
-        self.press_ms.setSuffix(" ms")
-        self.press_ms.valueChanged.connect(lambda v: setattr(self.io, "press_ms", v))
         self.widgets: dict[str, tuple] = {}
 
         # power | latched warning inputs | momentary buttons
@@ -79,7 +74,8 @@ class HardwarePage(BasePage):
             elif kind == "button":
                 led = Led("#ffb300")
                 w = QPushButton(label)
-                w.pressed.connect(lambda n=name: self._press(n))
+                w.pressed.connect(lambda n=name: self.io.hold(n, True))
+                w.released.connect(lambda n=name: self.io.hold(n, False))
                 r, c = BUTTON_POS.get(name, (4 + n_btn // 2, n_btn % 2))
                 bg.addLayout(_line(led, w, pin), r, c)
                 n_btn += 1
@@ -102,7 +98,10 @@ class HardwarePage(BasePage):
         pv.addWidget(note)
         pv.addStretch(1)
         ig.setRowStretch(ig.rowCount(), 1)
-        bg.addLayout(_line(QLabel("Press duration"), self.press_ms), bg.rowCount(), 0, 1, 2)
+        hold_note = QLabel("Held for as long as the mouse button is down (the ESP32 releases after 10 s at most).")
+        hold_note.setWordWrap(True)
+        hold_note.setStyleSheet("color: #9aa5ae;")
+        bg.addWidget(hold_note, bg.rowCount(), 0, 1, 2)
         bg.setRowStretch(bg.rowCount(), 1)
         groups.addWidget(power_box, 2)
         groups.addWidget(inputs_box, 3)
@@ -146,9 +145,6 @@ class HardwarePage(BasePage):
 
     def _set(self, name: str, on: bool) -> None:
         self.io.set(name, on)
-
-    def _press(self, name: str) -> None:
-        self.io.press(name, self.press_ms.value())
 
     def _all_off(self) -> None:
         if confirm(self, "All off", "Turn every ESP32 output off? The meter will lose power."):

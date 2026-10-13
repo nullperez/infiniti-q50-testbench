@@ -54,6 +54,8 @@ Rules (from the owner's handoff, enforced in code where possible):
 * Layers: can → core → capture/signals → sim/av/hw → control → ui. Lower layers never import higher ones.
 * Signals: `q50tb/signals/q50_main.py`. Keep confidence words; don't upgrade candidates without evidence.
 * AV protocol knowledge and evidence: `docs/AV_PROTOCOL.md`; editable codes in `registry/`.
+* Main-bus sweep of undecoded IDs (what was tried, what showed nothing): `docs/MAIN_BUS_SWEEP.md`.
+* Main-bus capture analysis (new fields, counters/checksums, corrections, open leads): `docs/MAIN_BUS_CAPTURE_ANALYSIS.md`.
 * Every transmit goes through `BusChannel.send` (monitor gate, protected IDs, ownership) — don't bypass it.
 * Tests build `AppSettings()` directly, which never writes the user's settings file; only `AppSettings.load()` persists.
 * Run `python -m pytest -q tests` after changes.

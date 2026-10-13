@@ -66,7 +66,7 @@ class ControlsPage(BasePage):
         b = self.b
         self.engine_on = QCheckBox("Engine running")
         self.engine_on.setChecked(True)
-        self.engine_on.setToolTip("Off: engine flags in 0x160/0x182/0x300/0x580 set to 'stopped' and RPM 0 "
+        self.engine_on.setToolTip("Off: engine flags in 0x160/0x182/0x580 and 0x300 steering assist set to 'stopped' and RPM 0 "
                                   "(as with ignition on, engine off). On: back to the captured idle.")
         self.engine_on.clicked.connect(lambda on: (self.ctx.set_engine_running(on), self.b.sync_all()))
         f.addRow("Engine", self.engine_on)
@@ -108,6 +108,8 @@ class ControlsPage(BasePage):
         f.addRow("Engine torque", b.spin("main.580.ENGINE_TORQUE", 0, 1000, decimals=1))
         f.addRow("Oil temperature", row(b.spin("main.580.OIL_TEMP", -40, 215), confidence_badge("candidate")))
         f.addRow("Fuel usage counter", b.spin("main.551.FUEL_USAGE_COUNTER", 0, 255))
+        f.addRow("Tach forced to 0 (0x6E2 B6.6)", row(b.checkbox("main.6E2.TACH_ZERO_FLAG", "Set"),
+                                                       QLabel("(meaning unknown)"), confidence_badge("probable")))
         f.addRow("Brake pressed", row(b.checkbox("main.182.BRAKE_PRESSED", "0x182"),
                                       b.checkbox("main.354.BRAKE_PRESSED", "0x354"),
                                       b.checkbox("main.35D.BRAKE_PRESSED", "0x35D")))
@@ -233,6 +235,8 @@ class ControlsPage(BasePage):
         f.addRow("Key system error", b.checkbox("main.351.KEY_SYSTEM_ERROR"))
         f.addRow("Chassis error (0x56C B0.1)", row(b.checkbox("main.56C.CHASSIS_ERROR"),
                                                    confidence_badge(b.sdef("main.56C.CHASSIS_ERROR").confidence)))
+        f.addRow("SCM system error (0x02A B4.0)", row(b.checkbox("main.02A.SCM_SYSTEM_ERROR", "'SCM system error / Visit dealer'"),
+                                                      confidence_badge(b.sdef("main.02A.SCM_SYSTEM_ERROR").confidence)))
         f.addRow("TCS / slip (0x354)", b.combo("main.354.TCS_STATE"))
         v.addLayout(f)
         abs_box = QGroupBox("ABS / BRAKE (0x354 byte 4) - lamp + hold bits")
@@ -392,6 +396,13 @@ class ControlsPage(BasePage):
         w = QWidget()
         f = QFormLayout(w)
         b = self.b
+        f.addRow("Outside temperature", b.slider(
+            "main.54C.OUTSIDE_TEMP", -41, 186, 1, suffix="°F",
+            to_phys=lambda f_: (f_ - 32) / 1.8, from_phys=lambda c: c * 1.8 + 32))
+        f.addRow("", row(button("Not available (meter shows ---)", lambda: b.set("main.54C.OUTSIDE_TEMP", 86.5),
+                                tip="sends raw 0xFF"),
+                         QLabel("raw = (°C + 41) × 2, 0x54C byte 6"), confidence_badge("confirmed")))
+        f.addRow("", QLabel("The meter filters this: drops show almost at once, rises lag behind."))
         f.addRow("Driver temp (raw)", b.spin("main.54A.DRIVER_TEMP", 0, 255))
         f.addRow("Passenger temp (raw)", b.spin("main.54A.PASSENGER_TEMP", 0, 255))
         f.addRow("Air direction", b.combo("main.54B.AIR_DIRECTION"))

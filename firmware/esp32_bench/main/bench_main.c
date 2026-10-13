@@ -5,7 +5,7 @@
  *   PING                 -> OK PONG bench 1
  *   LIST                 -> OK LIST NAME:kind:pin ...      (pin -1 = not wired)
  *   STATUS               -> OK STATUS NAME=0|1|- ...       ('-' = not wired)
- *   SET <NAME> <0|1>     -> OK SET NAME v                  (power/input channels)
+ *   SET <NAME> <0|1>     -> OK SET NAME v                  (latch; a button is held until SET 0, max 10 s)
  *   PRESS <NAME> <ms>    -> OK PRESS NAME ms, auto-release after ms (button channels)
  *   ALLOFF               -> OK ALLOFF
  * Errors: ERR <CODE> [detail]  (UNKNOWN, BADARG, NOTWIRED, KIND, INTERLOCK <other>)
@@ -184,9 +184,15 @@ static void handle(char *line)
         channel_t *c = find(argv[1]);
         if (!c) { out("ERR UNKNOWN %s", argv[1]); return; }
         if (c->pin < 0) { out("ERR NOTWIRED %s", c->name); return; }
-        if (c->kind == KIND_BUTTON) { out("ERR KIND %s is a button; use PRESS", c->name); return; }
         int on = argv[2][0] == '1';
         xSemaphoreTake(s_lock, portMAX_DELAY);
+        if (c->kind == KIND_BUTTON) {
+            /* Buttons are momentary: SET 1 is a hold (released by SET 0), capped like PRESS. */
+            const char *other = on ? interlock_other(c) : NULL;
+            if (other) { xSemaphoreGive(s_lock); out("ERR INTERLOCK %s", other); return; }
+            esp_timer_stop(c->release_timer);
+            if (on) esp_timer_start_once(c->release_timer, (uint64_t)PRESS_MAX_MS * 1000ULL);
+        }
         out("OK SET %s %d", c->name, on);
         apply(c, on);
         xSemaphoreGive(s_lock);

@@ -241,8 +241,8 @@ class BenchAPI:
 
     @tool
     def set_engine_running(self, running: bool) -> dict:
-        """Engine on/off as the ECUs report it: off sets the engine flags in 0x160/0x182/0x300/0x580 to their
-        stopped values and RPM to 0 (RPM-gated warnings such as low oil and AT error go out); running returns
+        """Engine on/off as the ECUs report it: off sets the engine flags in 0x160/0x182/0x580 and the 0x300 steering-assist
+        value to their stopped values and RPM to 0 (RPM-gated warnings such as low oil and AT error go out); running returns
         to the captured idle. The ignition-ready bits (0x551 B3.7, 0x239 B4.6) are not touched."""
         self.ctx.set_engine_running(running)
         return {"engine_running": self.ctx.engine_running()}
@@ -701,6 +701,16 @@ class BenchAPI:
         PADDLE_DOWN, BRIGHT_UP, BRIGHT_DOWN."""
         try:
             self.ctx.bench.press(name.upper(), ms, wait=True)
+        except Exception as exc:
+            raise ApiError(str(exc))
+        return {"ok": True}
+
+    @tool
+    def bench_hold(self, name: str, on: bool) -> dict:
+        """Hold a button down (on=true) until released (on=false), like the Hardware page buttons.
+        The ESP32 releases it by itself after 10 s."""
+        try:
+            self.ctx.bench.hold(name.upper(), on, wait=True)
         except Exception as exc:
             raise ApiError(str(exc))
         return {"ok": True}

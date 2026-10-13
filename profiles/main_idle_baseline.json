@@ -38,7 +38,7 @@
   },
   {
    "id": "0x02A",
-   "name": "Unknown 0x02A",
+   "name": "SCM status",
    "bus": "main",
    "period_ms": 100.0,
    "payload": "00 00 00 00 00 08",
@@ -393,7 +393,7 @@
   },
   {
    "id": "0x300",
-   "name": "Unresolved 0x300",
+   "name": "Power steering assist",
    "bus": "main",
    "period_ms": 20.0,
    "payload": "00",
@@ -1164,7 +1164,7 @@
   },
   {
    "id": "0x54C",
-   "name": "Unknown 0x54C",
+   "name": "HVAC 3 (outside temperature)",
    "bus": "main",
    "period_ms": 100.0,
    "payload": "64 63 C0 E0 00 38 B1 AE",
@@ -1356,7 +1356,7 @@
   },
   {
    "id": "0x6E2",
-   "name": "Unknown 0x6E2",
+   "name": "Unresolved 0x6E2 (tach gate)",
    "bus": "main",
    "period_ms": 100.0,
    "payload": "00 00 3E 00 4D 04 00 00",
