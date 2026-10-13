@@ -1,10 +1,10 @@
 {
- "_comment": "Navigation maneuver codes (0x629 record byte 3). Codes 1-9 confirmed on the meter 2026-10-12 (arrow drawn); codes 10-12 made the meter ignore the whole record. Rename freely - the UI and MCP read this file.",
+ "_comment": "Navigation maneuver codes (0x629 record byte 3). Bench sweep 2026-10-13 of every code 0x00-0xFF with the camera (docs/img/nav_maneuvers_0x629.jpg): these 36 codes draw an arrow; every other code is ignored (the meter keeps the previous arrow). Same set as CANSim's 2026-09-29 sweep. Roundabouts 0x20-0x2F: even = clockwise (left-hand traffic), odd = counter-clockwise (US), exit angle rising from sharp to U-turn; 0x2A-0x2F draw the whole ring. The car's HU used 1-5 and 8 in captures. States 0x10/0x11/0x12 look identical on the meter. Rename freely - the UI and MCP read this file.",
  "maneuvers": [
   {
    "code": 0,
-   "label": "None",
-   "confidence": "observed"
+   "label": "None (stem only)",
+   "confidence": "confirmed"
   },
   {
    "code": 1,
@@ -50,6 +50,136 @@
    "code": 9,
    "label": "U-turn right",
    "confidence": "confirmed"
+  },
+  {
+   "code": 16,
+   "label": "Sharp left (other road faint)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 17,
+   "label": "Sharp right (other road faint)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 18,
+   "label": "Slight left (other road faint, A)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 19,
+   "label": "Slight right (other road faint, A)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 20,
+   "label": "Slight left (other road faint, B)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 21,
+   "label": "Slight right (other road faint, B)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 32,
+   "label": "Roundabout clockwise (LHT): sharp left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 33,
+   "label": "Roundabout counter-clockwise (US): sharp right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 34,
+   "label": "Roundabout clockwise (LHT): left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 35,
+   "label": "Roundabout counter-clockwise (US): right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 36,
+   "label": "Roundabout clockwise (LHT): bear left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 37,
+   "label": "Roundabout counter-clockwise (US): bear right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 38,
+   "label": "Roundabout clockwise (LHT): straight",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 39,
+   "label": "Roundabout counter-clockwise (US): straight",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 40,
+   "label": "Roundabout clockwise (LHT): bear right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 41,
+   "label": "Roundabout counter-clockwise (US): bear left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 42,
+   "label": "Roundabout clockwise (LHT): right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 43,
+   "label": "Roundabout counter-clockwise (US): left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 44,
+   "label": "Roundabout clockwise (LHT): sharp right",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 45,
+   "label": "Roundabout counter-clockwise (US): sharp left",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 46,
+   "label": "Roundabout clockwise (LHT): U-turn",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 47,
+   "label": "Roundabout counter-clockwise (US): U-turn",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 80,
+   "label": "Keep left (S-bend)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 81,
+   "label": "Keep right (S-bend)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 96,
+   "label": "Straight (dashed line)",
+   "confidence": "confirmed"
+  },
+  {
+   "code": 97,
+   "label": "Destination (checkered flag)",
+   "confidence": "confirmed"
   }
  ],
  "states": [
@@ -60,28 +190,31 @@
   },
   {
    "code": 2,
-   "label": "Next maneuver (far)",
+   "label": "New instruction (far, no bar)",
    "confidence": "observed"
   },
   {
    "code": 3,
-   "label": "Guidance active (far)",
+   "label": "Guidance update (far, no bar)",
    "confidence": "observed"
   },
   {
    "code": 16,
-   "label": "Approach start (0x10)",
-   "confidence": "observed"
+   "label": "Approach with bar - start (0x10)",
+   "confidence": "observed",
+   "notes": "car sends it once when the bar appears; meter shows 0x10/0x11/0x12 the same"
   },
   {
    "code": 17,
-   "label": "Approaching, progress bar (0x11)",
-   "confidence": "observed"
+   "label": "Approach with bar - update (0x11)",
+   "confidence": "observed",
+   "notes": "car repeats it ~1/s while progress climbs"
   },
   {
    "code": 18,
-   "label": "At maneuver (0x12)",
-   "confidence": "observed"
+   "label": "Approach with bar - at maneuver (0x12)",
+   "confidence": "observed",
+   "notes": "car sends it once with progress 100 and distance 0"
   }
  ],
  "units": [

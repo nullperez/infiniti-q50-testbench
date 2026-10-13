@@ -111,8 +111,7 @@ The media type byte alone sets the page title (01 CD, 02 Music Box, 03 iPod, 04 
 `2A 0D 00 <dev> <msg> 00 00` overlays a message: 00 blank, 01 "Audio OFF", 2B/2C "iPod is not connected",
 2D "Check USB memory or iPod", 30 "Please eject disc". It hides metadata, so send it only for an empty source.
 
-Nav maneuver codes (0x629 byte 3), bench 2026-10-12: 1 straight, 2 slight left, 3 slight right, 4 left, 5 right,
-6 sharp left, 7 sharp right, 8 U-turn left, 9 U-turn right; 10+ makes the meter ignore the record.
+Nav maneuver codes (0x629 byte 3): see §6 (36 codes, bench sweep 2026-10-13).
 
 Radio record: `20 0D 00 00 <band> 00 <valid> <preset> <freq×3> FF <slot> 06 <len> <text1 UTF-16LE>` then
 `00 02 06 <len> <text2>` or `00 00 00 00`. Slot byte: FM 01, AM 02, SXM 07.
@@ -128,14 +127,27 @@ Title and artist show on the meter; album is hidden (handoff). Texts up to 32 ch
 
 `20 0D <state> <maneuver> <bar> <progress> 00 00 <distance×4> <unit> <heading> 06 <len> <street UTF-16LE>`
 
-* state: 00 idle (compass), 02/03 guidance (far), 10 approach start, 11 approaching with bar, 12 at maneuver.
-  The first non-idle record is sent twice (handoff).
+* state: 00 idle (compass), 02 new instruction (far, no bar), 03 guidance update (far; with maneuver 00 =
+  between instructions), 10 / 11 / 12 approach with bar. The car's HU (LONGDRIVE, cap3, drivework) sends 10 once
+  when the bar starts, 11 about once a second while progress climbs, and 12 once at the maneuver (progress 100,
+  distance 0). On the meter 10, 11 and 12 look identical (owner, bench 2026-10-12): the meter keys the bar view
+  off the bar byte, not the state. The first non-idle record is sent twice (handoff).
 * progress 0…0x64 while the bar is shown.
 * distance nibbles: 5 integer digits, decimal flag, tenths, F: `FF FF 81 9F` = 8.9, `FF 50 00 FF` = 500,
   `FF FF F0 FF` = blank. unit 03 = mi, 08 = ft (`drivework`: 8.9 → 0.1 mi, then 500 → 100 ft → 0).
 * heading 0x01…0x20 wrapping (32 steps, `drivework` shows 1C→1D→…→20→01). Which value is north is a
   **candidate** (0x01 assumed).
-* maneuver codes 1–5 seen; meaning not confirmed — labels live in `registry/nav_maneuvers.json`.
+* maneuver (bench sweep of 0x00-0xFF with the camera, 2026-10-13; same set as CANSim's 2026-09-29 sweep).
+  Only these 36 codes draw an arrow; any other code is ignored and the meter keeps the previous arrow.
+  Labels live in `registry/nav_maneuvers.json`; picture of every icon: `img/nav_maneuvers_0x629.jpg`.
+  * 00 stem only, 01 straight, 02/03 slight left/right, 04/05 left/right, 06/07 sharp left/right,
+    08/09 U-turn left/right.
+  * 10/11 sharp left/right, 12/13 and 14/15 slight left/right: same arrows with the other road drawn faintly.
+  * 20-2F roundabouts. Even = clockwise (left-hand traffic), odd = counter-clockwise (US); exit angle rises
+    pairwise: 20/21 sharp, 22/23 first quarter (left / right), 24/25 bear, 26/27 straight, 28/29 bear,
+    2A/2B three quarters (right / left), 2C/2D sharp, 2E/2F U-turn. 2A-2F draw the whole ring.
+  * 50/51 keep left/right (S-bend), 60 straight with a dashed line, 61 destination (checkered flag).
+  * The car's HU used 01-05 and 08 in the captures (LONGDRIVE, cap3, drivework, navboth, navprompt).
 
 ## 7. Clock
 

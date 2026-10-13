@@ -4,8 +4,9 @@ Record layout (captures navboth / navprompt / drivework / cap3):
 
     20 0D <state> <maneuver> <bar> <progress%> 00 00 <distance x4> <unit> <heading> 06 <len> <street UTF-16LE>
 
-* state: 00 idle (compass), 02/03 guidance far, 10 approach start, 11 approaching
-  (progress bar), 12 at maneuver. The first non-idle state is sent twice.
+* state: 00 idle (compass), 02 new instruction far, 03 guidance update far, 10/11/12 approach
+  (bar): the car sends 10 once as the bar starts, 11 while progress climbs, 12 once at the
+  maneuver. The meter draws 10, 11 and 12 the same. The first non-idle state is sent twice.
 * bar: 01 while the approach bar is shown (states 10-12).
 * progress: 0..100 (0x64), only shown while approaching.
 * distance: nibble BCD, e.g. FF FF 81 9F = 8.9, FF 50 00 FF = 500; unit 03 mi, 08 ft.

@@ -12,7 +12,7 @@ one IG output/toggle switches both (`bench_set('ACC')` is an alias for IG).
 
 Unconfirmed protocol items (labelled *candidate* in code/UI; details in `docs/AV_PROTOCOL.md` §8):
 settings item 8 byte 1 (nav alert), which heading value is
-north, 0x61D select codes for CD / Music Box. (Maneuver codes 1-9, media types 01-08, the 2A status messages and
+north, 0x61D select codes for CD / Music Box. (36 maneuver codes incl. roundabouts (2026-10-13), media types 01-08, the 2A status messages and
 the USB/iPod swap were confirmed on the bench 2026-10-12; see `docs/AV_PROTOCOL.md`.)
 
 The owner's source documents (`Q50_Observed_Signals_and_Behaviors.md`, `HANDOFF_AV_BUS_AND_BENCH.md`,

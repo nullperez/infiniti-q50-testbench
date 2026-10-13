@@ -593,8 +593,10 @@ class BenchAPI:
     @tool
     def av_nav(self, state: int, maneuver: int = 0, street: str = "", distance: Optional[float] = None,
                unit: str = "mi", progress: int = 0, heading: str = "N") -> dict:
-        """Send a navigation record. state: 0 idle(compass), 2/3 guidance, 16 approach start,
-        17 approaching (progress bar), 18 at maneuver. heading: compass name (N, NNE, ...) or 1-32."""
+        """Send a navigation record. state: 0 idle(compass), 2/3 guidance (far), 16/17/18 approach with
+        progress bar (the car sends 16 once, 17 while approaching, 18 at the turn; the meter shows all three
+        the same). maneuver: code from registry/nav_maneuvers.json (incl. roundabouts 0x20-0x2F).
+        heading: compass name (N, NNE, ...) or 1-32."""
         h = int(heading) if str(heading).isdigit() else heading_from_compass(heading)
         self.ctx.hu.nav.update(state=state, maneuver=maneuver, street=street, distance=distance,
                                unit=3 if unit == "mi" else 8 if unit == "ft" else int(unit), progress=progress, heading=h)
