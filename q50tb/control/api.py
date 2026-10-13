@@ -540,6 +540,21 @@ class BenchAPI:
         return _wait_done(lambda d: self.ctx.hu.settings.set_page(page, enabled, d), 6)
 
     @tool
+    def av_set_pages(self, enabled: bool, pages: Optional[list] = None) -> dict:
+        """Enable/disable several meter pages (default: all) in one read-modify-write. Per-page result
+        is taken from the image the meter echoes ('ok' only if every page ended up as requested)."""
+        names = list(PAGES) if not pages else list(pages)
+        bad = [p for p in names if p not in PAGES]
+        if bad:
+            raise ApiError(f"unknown page(s) {bad}; pages are {list(PAGES)}")
+        s = self.ctx.hu.settings
+        res = _wait_done(lambda d: s.set_pages({p: enabled for p in names}, d), 6)
+        res["pages"] = {p: s.page_enabled(p) for p in PAGES}
+        res["image"] = s.page_image.hex(" ").upper() if s.page_image else None
+        res["ok"] = res.get("ok", False) and all(res["pages"][p] == enabled for p in names)
+        return res
+
+    @tool
     def av_set_units(self, unit: str) -> dict:
         """Tire pressure unit: 'kPa', 'PSI' or 'bar'."""
         code = {v.lower(): k for k, v in UNITS.items()}.get(unit.lower())

@@ -74,6 +74,8 @@ class SettingsService:
         self._timer = None
         self.response_timeout = 1.5
         self.listeners: list[Callable[[], None]] = []
+        self._page_jobs: list[tuple[dict[str, bool], Optional[Callable[[bool, str], None]]]] = []
+        self._page_busy = False
 
     # ── request queue ───────────────────────────────────────────────
     def _submit(self, req: _Request) -> None:
@@ -191,20 +193,51 @@ class SettingsService:
 
     def set_page(self, name: str, on: bool, done: Optional[Callable[[bool, str], None]] = None) -> None:
         """Read the live image, flip one mask, write it, and require the exact echo."""
-        b, m = PAGES[name]
+        self.set_pages({name: on}, done)
+
+    def set_pages(self, changes: dict[str, bool], done: Optional[Callable[[bool, str], None]] = None) -> None:
+        """Several masks in one read-modify-write. Requests made while a cycle is running are
+        merged into the next cycle, so quick successive calls cannot overwrite each other's change
+        (each write would otherwise carry the image read before the previous write)."""
+        for name in changes:
+            PAGES[name]                      # KeyError for an unknown page, before anything is queued
+        with self._lock:
+            self._page_jobs.append((dict(changes), done))
+            if self._page_busy:
+                return
+            self._page_busy = True
+        self._page_cycle()
+
+    def _page_cycle(self) -> None:
+        with self._lock:
+            jobs, self._page_jobs = self._page_jobs, []
+            if not jobs:
+                self._page_busy = False
+                return
+
+        def finish(ok: bool, why: str) -> None:
+            for _changes, d in jobs:
+                if d:
+                    try:
+                        d(ok, why)
+                    except Exception:
+                        pass
+            self._page_cycle()
 
         def with_image(st: ItemState):
             if st.status != 0 or st.value is None:
-                if done:
-                    done(False, "page image not readable (session not ready?)")
+                finish(False, "page image not readable (session not ready?)")
                 return
             img = bytearray(st.value)
-            img[b] = (img[b] | m) if on else (img[b] & ~m & 0xFF)
+            for changes, _d in jobs:         # in request order: a later request for a page wins
+                for name, on in changes.items():
+                    b, m = PAGES[name]
+                    if b < len(img):
+                        img[b] = (img[b] | m) if on else (img[b] & ~m & 0xFF)
             if bytes(img) == st.value:
-                if done:
-                    done(True, "already in requested state")
+                finish(True, "already in requested state")
                 return
-            self.write(ITEM_PAGES, bytes(img), done)
+            self.write(ITEM_PAGES, bytes(img), finish)
         self.read(ITEM_PAGES, with_image)
 
     # ── preferences ─────────────────────────────────────────────────

@@ -165,8 +165,20 @@ class AvPage(BasePage):
             f"page|{n}|{'OK' if ok else 'FAIL'}|{why}"))
 
     def _all_pages(self, on: bool) -> None:
+        """One read-modify-write for every page; each page is judged from the image the meter echoes."""
         for name in PAGES:
-            self._set_page(name, on)
+            self.page_results[name].setText("pending…")
+        s = self.hu.settings
+
+        def done(ok: bool, why: str) -> None:
+            for n in PAGES:
+                actual = s.page_enabled(n)
+                if actual == on:
+                    self.bridge.changed.emit(f"page|{n}|OK|{'confirmed' if ok else 'matches the meter image'}")
+                else:
+                    kept = why if actual is None else f"meter kept it {'on' if actual else 'off'}"
+                    self.bridge.changed.emit(f"page|{n}|FAIL|{kept}")
+        s.set_pages({n: on for n in PAGES}, done)
 
     # ── preferences ─────────────────────────────────────────────────
     def _prefs_tab(self) -> QWidget:

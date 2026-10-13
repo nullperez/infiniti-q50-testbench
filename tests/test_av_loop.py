@@ -8,6 +8,7 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from q50tb.av.headunit import READY, HeadUnitEmulator  # noqa: E402
+from q50tb.av.services.settings import PAGES  # noqa: E402
 from q50tb.av.sniffer import AvSniffer  # noqa: E402
 from q50tb.av.virtual_meter import VirtualMeter  # noqa: E402
 from q50tb.can.adapters.base import AdapterInfo, BusConfig  # noqa: E402
@@ -60,6 +61,22 @@ def test_handshake_and_settings():
         hu.settings.set_page("Tire Pressure", True, lambda ok, why: (res.update(ok=ok, why=why), ev.set()))
         assert ev.wait(5)
         assert not res["ok"] and "rejected" in res["why"], res
+        vm.reject_page_writes = False
+
+        # several page changes requested back to back must all land (they used to overwrite each other,
+        # so "disable all pages" only changed the last page)
+        results = []
+        both = threading.Event()
+        for name in ("Range", "Audio"):
+            hu.settings.set_page(name, False, lambda ok, why: (results.append(ok), len(results) == 2 and both.set()))
+        assert both.wait(5) and all(results), results
+        assert not vm.items[0x2][0] & 0x01 and not vm.items[0x2][2] & 0x40, vm.items[0x2].hex(" ")
+        for on, image in ((False, "00 CC 0F FC FC C0 00 00 00"), (True, "55 DD 5F FD FD C0 00 00 00")):
+            ev.clear()
+            hu.settings.set_pages({n: on for n in PAGES}, lambda ok, why: (res.update(ok=ok, why=why), ev.set()))
+            assert ev.wait(5) and res["ok"], res
+            assert all(hu.settings.page_enabled(n) == on for n in PAGES), hu.settings.page_image.hex(" ")
+            assert vm.items[0x2].hex(" ").upper() == image
 
         ev.clear()
         hu.settings.set_units(0x03, lambda ok, why: (res.update(ok=ok, why=why), ev.set()))
