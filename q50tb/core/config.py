@@ -52,6 +52,10 @@ class AppSettings:
     tracker_stale_ms: int = 1000
     dashboard_units: str = "mph"
     dashboard_source: str = "auto"          # auto | rx | tx+rx
+    # window layout (q50tb/ui/layout.py): layout name, page title per pane, splitter states per layout
+    ui_layout: str = "single"
+    ui_layout_pages: list[str] = field(default_factory=list)
+    ui_layout_sizes: dict = field(default_factory=dict)
     # AV
     av_auto_start: bool = True
     av_answer_delay_ms: int = 50

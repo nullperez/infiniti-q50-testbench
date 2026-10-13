@@ -1,16 +1,17 @@
-"""Main window: connection bar, page navigation and the refresh loop."""
+"""Main window: connection bar, page navigation (split-pane layout) and the refresh loop."""
 
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QColor, QFont
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-                               QMainWindow, QMessageBox, QPushButton, QSplitter, QStackedWidget, QVBoxLayout, QWidget)
+                               QMainWindow, QMessageBox, QPushButton, QSplitter, QVBoxLayout, QWidget)
 
 from q50tb.can.adapters.base import ListenOnlyUnsupported
 from q50tb.control.api import BenchAPI
 from q50tb.control.server import ControlServer
 from q50tb.core.bus_manager import AV, MAIN
+from q50tb.ui.layout import LAYOUTS, PaneArea
 from q50tb.ui.pages.av_debug_page import AvDebugPage
 from q50tb.ui.pages.av_page import AvPage
 from q50tb.ui.pages.background_page import BackgroundPage
@@ -31,6 +32,8 @@ NAV = [
     ("", [SettingsPage]),
 ]
 BITRATES = [500_000, 250_000, 125_000, 1_000_000]
+# pages that fill new panes, in order (e.g. 2 top + 1 bottom: Controls | Hardware over Dashboard)
+DEFAULT_PANE_PAGES = [ControlsPage, HardwarePage, DashboardPage, LogPage]
 
 
 class ConnectionBar(QFrame):
@@ -73,6 +76,14 @@ class ConnectionBar(QFrame):
                   self.fd, self.monitor, self.start, self.led_main, self.led_av, self.state):
             lay.addWidget(w)
         lay.addStretch(1)
+        self.layout_combo = QComboBox()
+        self.layout_combo.setToolTip("Page layout: show up to four pages at once. The sidebar opens pages in the "
+                                     "active pane (blue outline, the last one clicked); each pane's header picks "
+                                     "its page. Drag the gaps between panes to resize.")
+        for name, (text, _spec) in LAYOUTS.items():
+            self.layout_combo.addItem(text, name)
+        lay.addWidget(QLabel("Layout"))
+        lay.addWidget(self.layout_combo)
         self.fill()
 
     def fill(self) -> None:
@@ -173,7 +184,6 @@ class MainWindow(QMainWindow):
         split = QSplitter(Qt.Horizontal)
         self.nav = QListWidget()
         self.nav.setMaximumWidth(210)
-        self.stack = QStackedWidget()
         self.pages = []
         bold = QFont()
         bold.setBold(True)
@@ -187,17 +197,21 @@ class MainWindow(QMainWindow):
             for cls in classes:
                 page = cls(ctx, self.bridge)
                 self.pages.append(page)
-                self.stack.addWidget(page)
                 it = QListWidgetItem("   " + page.title)
                 it.setData(Qt.UserRole, len(self.pages) - 1)
                 self.nav.addItem(it)
         self.nav.currentItemChanged.connect(self._nav_changed)
+        defaults = [i for cls in DEFAULT_PANE_PAGES for i, p in enumerate(self.pages) if type(p) is cls]
+        self.area = PaneArea(self.pages, defaults)
+        self.area.changed.connect(self._sync_nav)
         split.addWidget(self.nav)
-        split.addWidget(self.stack)
+        split.addWidget(self.area)
         split.setStretchFactor(1, 1)
         v.addWidget(split, 1)
         self.setCentralWidget(central)
-        self.nav.setCurrentRow(1)
+        self._restore_layout()
+        self.conn.layout_combo.currentIndexChanged.connect(
+            lambda _i: self.set_layout(self.conn.layout_combo.currentData()))
 
         ctx.buses.add_state_listener(lambda: self.bridge.changed.emit("bus-state"))
         ctx.buses.add_status_listener(lambda lvl, msg: self.bridge.changed.emit(f"status|{lvl}|{msg}"))
@@ -255,13 +269,47 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"control server not started: {exc}", 10000)
                 self.server = None
 
+    # ── layout ──────────────────────────────────────────────────────
+    def _page_index(self, title: str):
+        return next((i for i, p in enumerate(self.pages) if p.title == title), None)
+
+    def _restore_layout(self) -> None:
+        s = self.ctx.settings
+        name = s.ui_layout if s.ui_layout in LAYOUTS else "single"
+        pages = [self._page_index(t) for t in s.ui_layout_pages] or None
+        self.area.set_layout(name, pages, s.ui_layout_sizes.get(name))
+        self.conn.layout_combo.blockSignals(True)
+        self.conn.layout_combo.setCurrentIndex(self.conn.layout_combo.findData(name))
+        self.conn.layout_combo.blockSignals(False)
+
+    def _save_layout(self) -> None:
+        s = self.ctx.settings
+        s.ui_layout = self.area.layout_name
+        s.ui_layout_pages = [self.pages[p.page_index].title for p in self.area.panes if p.page_index is not None]
+        s.ui_layout_sizes = {**s.ui_layout_sizes, self.area.layout_name: self.area.splitter_states()}
+
+    def set_layout(self, name: str) -> None:
+        if name == self.area.layout_name:
+            return
+        self._save_layout()  # remember this layout's splitter sizes
+        self.area.set_layout(name, None, self.ctx.settings.ui_layout_sizes.get(name))
+        self._save_layout()
+
+    def _sync_nav(self) -> None:
+        idx = self.area.active_page_index()
+        for r in range(self.nav.count()):
+            if self.nav.item(r).data(Qt.UserRole) == idx:
+                self.nav.blockSignals(True)
+                self.nav.setCurrentRow(r)
+                self.nav.blockSignals(False)
+                break
+
     def _nav_changed(self, cur, _prev) -> None:
         if cur is None:
             return
         idx = cur.data(Qt.UserRole)
         if idx is not None:
-            self.stack.setCurrentIndex(idx)
-            self.pages[idx].refresh()
+            self.area.show_in_active(idx)
 
     def _bridge(self, msg: str) -> None:
         if msg == "bus-state":
@@ -281,8 +329,7 @@ class MainWindow(QMainWindow):
 
     def _tick(self) -> None:
         self.conn.refresh()
-        page = self.stack.currentWidget()
-        if page is not None:
+        for page in self.area.visible_pages():
             try:
                 page.refresh()
             except Exception as exc:
@@ -290,6 +337,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, ev) -> None:
         self.timer.stop()
+        self._save_layout()
         if self.server:
             self.server.stop()
         try:
