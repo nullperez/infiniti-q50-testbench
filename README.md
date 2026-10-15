@@ -33,9 +33,15 @@ Python 3.10+ / PySide6, Windows and Linux (Ubuntu). CAN through **Kvaser CANlib*
 | Signal Tracker | Upload a `.dbc` (or use the built-in database) and watch decoded values; trend plot; export the built-in database as `q50_main.dbc`. |
 | AV Debug | Reassembled AV transactions with decoding (works in monitor mode), record composer with templates, raw frame injector, link timing, channel configuration, paste-and-decode. |
 
-## AV head unit in 60 seconds
+## CAN Bus 
 
-Protocol details and evidence: [docs/AV_PROTOCOL.md](docs/AV_PROTOCOL.md).
+More info on my findings on the CAN Bus can be found in my other repo: https://github.com/nullperez/infiniti-q50-canbus
+
+## AV Protocol
+
+The AV communication between the gauge cluster and the infotainment system uses a Nissan proprietary protocol.
+It operates on top of the CAN physical and data link layer, and on the application layer similarly to ISO TP.
+More details here: [docs/AV_PROTOCOL.md](docs/AV_PROTOCOL.md).
 
 // TODO - finish readme
 
