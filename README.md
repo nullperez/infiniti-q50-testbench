@@ -1,10 +1,10 @@
 # Q50 TestBench
 
 Bench-test and monitoring app for my 2019 Infiniti Q50 combination meter (`248RL-6HH0E`).
-Python 3.10+ / PySide6, Windows and Linux (Ubuntu). CAN through **Kvaser CANlib** or **SocketCAN**
-(and any python-can interface); a software virtual bus works with no hardware.
+Uses Python 3.10+ / PySide6, Windows and Linux (Ubuntu) compatible. 
+Uses CAN through **Kvaser CANlib** or **SocketCAN** (and any python-can interface); a software virtual bus also works with no hardware.
 
-## Safety model
+## Basic Usage
 
 * **MONITORING MODE ONLY** (checkbox next to *Start bus*): adapters open in hardware listen-only (Kvaser
   SILENT, SocketCAN `listen-only on`) — nothing is transmitted or ACKed. The channels also have no software
@@ -17,7 +17,7 @@ Python 3.10+ / PySide6, Windows and Linux (Ubuntu). CAN through **Kvaser CANlib*
   messages while active, and gives it back afterwards.
 * Settings writes on the AV bus succeed only when the meter echoes the requested value.
 
-## Pages
+## Feature/Pages
 
 | Page | What it does |
 |---|---|
