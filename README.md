@@ -1,21 +1,8 @@
 # Q50 TestBench
 
-Bench-test and monitoring app for the 2019 Infiniti Q50 combination meter (`248RL-6HH0E`).
+Bench-test and monitoring app for my 2019 Infiniti Q50 combination meter (`248RL-6HH0E`).
 Python 3.10+ / PySide6, Windows and Linux (Ubuntu). CAN through **Kvaser CANlib** or **SocketCAN**
 (and any python-can interface); a software virtual bus works with no hardware.
-
-## Start
-
-```
-run.bat            (Windows)       bash run.sh        (Linux)
-```
-Both create `.venv` and install `requirements.txt` on first run, then start `python -m q50tb`.
-
-Linux notes: Kvaser USB adapters work out of the box through SocketCAN (the kernel's `kvaser_usb` driver
-shows each channel as `can0`, `can1`, …); Kvaser's own `linuxcan`/CANlib is optional. SocketCAN links are
-configured with
-`ip link set can0 type can bitrate 500000 [listen-only on]` (or let the app do it via Settings →
-"Let the app configure SocketCAN links", which uses sudo/pkexec).
 
 ## Safety model
 
@@ -48,80 +35,7 @@ configured with
 
 ## AV head unit in 60 seconds
 
-1. Power the meter including **ACC** (M57 pin 14; tied to IG on the bench, so IG on is enough) and start the bus with both main and AV adapters.
-2. Keep background messages running (0x51C + 0x4F6 make AV page slots exist; 0x385 for TPMS).
-3. AV Controls → tick **ENABLE AV CONTROLS**. Channels go `waiting → announced → negotiating → ready`
-   when the meter announces; the meter re-announces until answered. If a channel stays `waiting`,
-   power-cycle the meter (Hardware page) with the emulation running.
-4. Settings are read automatically; change pages/preferences from there.
-
 Protocol details and evidence: [docs/AV_PROTOCOL.md](docs/AV_PROTOCOL.md).
 
-## ESP32 firmware
+// TODO - finish readme
 
-`firmware/esp32_bench/` is ESP-IDF firmware speaking the same line protocol as the original esp32-bench
-(PING/LIST/STATUS/SET/PRESS/ALLOFF, `EVT` lines) plus an optional **ACC** channel. The GPIO table in
-`main/bench_main.c` matches the bench wiring (copied from the old firmware's LIST); check it against LIST before
-flashing another board. On the bench ACC is tied to IG, so ACC stays unwired and the bench keeps running the old
-firmware, which works as is. Build: `idf.py set-target esp32 build flash`.
-The client is `q50tb/hw/esp32_bench.py` (your original API, extended).
-
-## AI agents (MCP)
-
-The GUI runs a local JSON-RPC control server (127.0.0.1:8765). The MCP server exposes every method in
-`q50tb/control/api.py` as a tool (61 today: buses, signals, dashboard, background, send queue, log, tracker,
-record/replay, AV head unit, ESP32).
-
-* Claude Code in this folder picks up `.mcp.json` automatically (Linux path; on Windows change the command
-  to `.venv/Scripts/python.exe`).
-* Other clients: `"command": "<repo>/.venv/Scripts/python", "args": ["-m", "q50tb.control.mcp_server"]`.
-* `--headless` runs the bench without the GUI.
-
-Agents should call `help` first; safety rules are in the tool descriptions.
-
-## Code layout
-
-```
-q50tb/
-  can/        frame, adapters (kvaser, python-can), discovery
-  core/       bus_manager (monitor gate, protected IDs, ownership), scheduler, log buffer,
-              send_queue, replay, tracker, recorder, config, timebase
-  capture/    pcapng / CSV / candump readers & writers
-  signals/    model (bit segments), q50_main (database), vehicle_state, dashboard, dbc
-  sim/        background messages, baseline builder, effects (blinkers)
-  av/         transport, protocol, headunit, sniffer, virtual_meter, services/{settings,audio,navigation,clock}
-  hw/         esp32_bench client, bench_io worker
-  control/    api (tool registry), server (JSON-RPC), mcp_server
-  ui/         main_window, pages/ (one file per page), widgets/
-registry/     av_sources.json, nav_maneuvers.json  (editable labels/codes)
-profiles/     background-message profiles
-tools/        build_baseline.py, screenshot_pages.py
-tests/        pytest suite (virtual buses + virtual meter; Kvaser virtual channels if installed)
-```
-
-Lower layers never import higher ones, so a change to one page or service stays local.
-
-**Adding things**
-
-* New signal → add a `SignalDef` in `q50tb/signals/q50_main.py`. It appears in Controls → All signals, the
-  dashboard decoder, the API (`set_signal`) and the DBC export.
-* New curated control → one line in the right tab of `ui/pages/controls_page.py` using `SignalBinder`.
-* New audio source / maneuver label → edit the JSON in `registry/`.
-* New agent capability → add a method with `@tool` in `control/api.py`.
-* New page → subclass `BasePage` in `ui/pages/` and add it to `NAV` in `ui/main_window.py`.
-
-## Tests
-
-```
-.venv/Scripts/python -m pip install -r requirements-dev.txt      (Linux: .venv/bin/python)
-.venv/Scripts/python -m pytest -q -rs tests
-sudo bash tools/setup_vcan.sh                                    (Linux, optional: vcan0/vcan1 for the SocketCAN tests)
-```
-Covers the AV handshake/settings/fragmentation against a virtual meter, monitor-mode never transmitting,
-ownership/protected IDs, the whole API headless, codecs, and capture round trips.
-
-## Evidence levels
-
-Everything decoded here comes from the owner's README, the handoff notes and capture analysis.
-Each signal and AV item carries `confirmed / documented / probable / candidate` and the UI shows it.
-Candidates are usable for experiments but are not facts.
