@@ -4,6 +4,9 @@ Derived on 2026-10-12 from the captures in `reference_logs/Q50_Dumps` (car and b
 `HANDOFF_AV_BUS_AND_BENCH.md`. Confidence words keep the project meaning: **confirmed** (bench-isolated or
 clean capture correlation), **probable**, **candidate**. Code: `q50tb/av/`.
 
+> Note:
+> Nissan refers to the gauge cluster as the combination meter. It will be referred to as such throughout this page
+
 ## 1. Who is on the AV bus
 
 | HU sends | Peer answers | Peer | Evidence |
